@@ -1,0 +1,28 @@
+{
+  "milestones": [
+    {
+      "title": "v0.1",
+      "description": "Repository setup, documentation, and architecture foundation"
+    },
+    {
+      "title": "v0.2",
+      "description": "Core SDK and event bus foundation"
+    },
+    {
+      "title": "v0.3",
+      "description": "Express adapter, middleware, and request capture"
+    },
+    {
+      "title": "v0.4",
+      "description": "Dashboard backend"
+    },
+    {
+      "title": "v0.5",
+      "description": "React dashboard"
+    },
+    {
+      "title": "v1.0",
+      "description": "First stable release"
+    }
+  ]
+}
