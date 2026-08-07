@@ -1,4 +1,4 @@
-export type TraceEventType = 'request' | 'error' | 'query' | 'auth';
+export type TraceEventType = 'request' | 'response' | 'error' | 'query' | 'auth';
 
 export interface TraceEvent {
   id: string;
