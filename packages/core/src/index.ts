@@ -1,3 +1,5 @@
+import { createErrorEvent } from './error';
+
 export interface TraceoConfig {
   enabled: boolean;
   environment: string;
@@ -26,6 +28,16 @@ export class TraceoCore {
 
     await this.sink.capture(event);
   }
+
+  public async captureError(context: Parameters<typeof import('./error').createErrorEvent>[0]): Promise<void> {
+    if (!this.config.enabled) {
+      return;
+    }
+
+    const event = createErrorEvent(context);
+    await this.sink.capture(event);
+  }
 }
 
 export * from './request';
+export * from './error';

@@ -16,4 +16,15 @@ export class InMemoryTraceStore {
   public list(): TraceEventLike[] {
     return [...this.events];
   }
+
+  public listByType(type: string): TraceEventLike[] {
+    return this.events.filter((event) => event.type === type);
+  }
+
+  public listByRequestId(requestId: string): TraceEventLike[] {
+    return this.events.filter((event) => {
+      const payload = event.payload as Record<string, unknown>;
+      return payload.requestId === requestId;
+    });
+  }
 }
