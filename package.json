@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -b",
+    "test": "node --test \"test/**/*.test.js\" \"packages/express/src/**/*.test.js\""
   },
   "keywords": [],
   "author": "",

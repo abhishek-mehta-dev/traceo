@@ -9,6 +9,8 @@ pnpm-store/
 /.next/
 /.nuxt/
 /coverage/
+**/dist/
+**/.turbo/
 
 # Environment files
 .env
