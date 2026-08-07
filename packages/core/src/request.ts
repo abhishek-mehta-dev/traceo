@@ -6,7 +6,13 @@ export interface TraceRequestContext {
   timestamp?: string;
 }
 
+function createRequestId() {
+  return `req-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export function createRequestEvent(context: TraceRequestContext) {
+  const requestId = createRequestId();
+
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     type: 'request',
@@ -16,7 +22,8 @@ export function createRequestEvent(context: TraceRequestContext) {
       method: context.method,
       url: context.url,
       statusCode: context.statusCode,
-      headers: context.headers ?? {}
+      headers: context.headers ?? {},
+      requestId
     }
   };
 }

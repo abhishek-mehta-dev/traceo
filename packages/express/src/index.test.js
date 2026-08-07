@@ -28,4 +28,6 @@ test('express middleware captures request metadata', async () => {
   assert.equal(captured.length, 1);
   assert.equal(captured[0].payload.method, 'GET');
   assert.equal(captured[0].payload.url, '/ping');
+  assert.equal(typeof req.traceoRequestId, 'string');
+  assert.equal(captured[0].payload.requestId, req.traceoRequestId);
 });

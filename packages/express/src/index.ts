@@ -4,8 +4,15 @@ export interface TraceoExpressOptions {
   };
 }
 
+function createRequestId() {
+  return `req-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export function createTraceoMiddleware(options: TraceoExpressOptions) {
   return (req: any, res: any, next: () => void) => {
+    const requestId = req.traceoRequestId ?? createRequestId();
+    req.traceoRequestId = requestId;
+
     const event = {
       id: `${Date.now()}`,
       type: 'request',
@@ -14,7 +21,8 @@ export function createTraceoMiddleware(options: TraceoExpressOptions) {
       payload: {
         method: req.method,
         url: req.url,
-        statusCode: res.statusCode
+        statusCode: res.statusCode,
+        requestId
       }
     };
 

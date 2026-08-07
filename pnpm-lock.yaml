@@ -8,12 +8,54 @@ importers:
 
   .:
     devDependencies:
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
       turbo:
         specifier: ^2.10.8
         version: 2.10.8
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+
+  packages/cli:
+    dependencies:
+      '@traceo/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.0
+        version: 24.13.3
+
+  packages/core: {}
+
+  packages/express:
+    dependencies:
+      '@traceo/core':
+        specifier: workspace:*
+        version: link:../core
+      '@traceo/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/server:
+    dependencies:
+      '@traceo/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
+
+  packages/shared: {}
+
+  packages/storage:
+    dependencies:
+      '@traceo/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 
@@ -46,6 +88,9 @@ packages:
     resolution: {integrity: sha512-VN30vh3b3Czh2WzYHNTfF1FE0YMZ5aHsLO8dBMGHJewA6792wX6iJR8ZxlzFW6WdOu0gEAKIvlYhfyT81Wkm4Q==}
     cpu: [arm64]
     os: [win32]
+
+  '@types/node@24.13.3':
+    resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -176,6 +221,9 @@ packages:
     engines: {node: '>=16.20.0'}
     hasBin: true
 
+  undici-types@7.18.2:
+    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
+
 snapshots:
 
   '@turbo/darwin-64@2.10.8':
@@ -195,6 +243,10 @@ snapshots:
 
   '@turbo/windows-arm64@2.10.8':
     optional: true
+
+  '@types/node@24.13.3':
+    dependencies:
+      undici-types: 7.18.2
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
@@ -287,3 +339,5 @@ snapshots:
       '@typescript/typescript-sunos-x64': 7.0.2
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
+
+  undici-types@7.18.2: {}
