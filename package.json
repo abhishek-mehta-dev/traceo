@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc -b",
-    "test": "node --test \"test/**/*.test.js\" \"packages/express/src/**/*.test.js\""
+    "test": "node --test test/*.test.js packages/express/src/*.test.js"
   },
   "keywords": [],
   "author": "",
