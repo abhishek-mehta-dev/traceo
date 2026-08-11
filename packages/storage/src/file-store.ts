@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { queryTraceEvents, type TraceEventQuery } from './query';
 
 export interface TraceEventLike {
   id: string;
@@ -28,18 +28,19 @@ export class FileTraceStore {
   }
 
   public listByType(type: string): TraceEventLike[] {
-    return this.readEvents().filter((event) => event.type === type);
+    return this.query({ type });
   }
 
   public listByRequestId(requestId: string): TraceEventLike[] {
-    return this.readEvents().filter((event) => {
-      const payload = event.payload as Record<string, unknown>;
-      return payload.requestId === requestId;
-    });
+    return this.query({ requestId }).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
   }
 
   public getTimeline(requestId: string): TraceEventLike[] {
-    return this.listByRequestId(requestId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    return this.listByRequestId(requestId);
+  }
+
+  public query(query: TraceEventQuery = {}): TraceEventLike[] {
+    return queryTraceEvents(this.readEvents(), query);
   }
 
   private readEvents(): TraceEventLike[] {
