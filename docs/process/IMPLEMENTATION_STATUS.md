@@ -7,7 +7,7 @@
 | Express | PARTIAL | Middleware now uses the canonical core HTTP event factories, captures request and response completion data, preserves trace/request correlation, and sends canonical events to the configured storage boundary. Error capture, request bodies, configurable production masking, and strong Express package typing remain future work. |
 | NestJS | MISSING | Directory is placeholder-only. |
 | Storage | PARTIAL | In-memory and JSON file stores support capture, timeline, search, and filters; SQLite storage is missing. |
-| Server | PARTIAL | Basic Node HTTP API exposes `/health`, `/events`, and `/timeline/:requestId`; no auth, dashboard hosting, pagination, or reusable server factory. |
+| Server | PARTIAL | A storage-backed HTTP API now exposes `/health`, `/requests`, `/requests/:id`, `/requests/:traceId/timeline`, basic pagination, supported filtering, and safe sorting; auth, dashboard hosting, and richer response shaping remain future work. |
 | Dashboard | MISSING | `apps/dashboard` contains only a placeholder. |
 | Dashboard SDK | MISSING | Package directory is placeholder-only. |
 | Plugins | MISSING | Package directory is placeholder-only. |

@@ -43,6 +43,10 @@ export class FileTraceStore {
     return queryTraceEvents(this.readEvents(), query);
   }
 
+  public getById(id: string): TraceEventLike | undefined {
+    return this.readEvents().find((event) => event.id === id);
+  }
+
   private readEvents(): TraceEventLike[] {
     if (!existsSync(this.filePath)) {
       return [];

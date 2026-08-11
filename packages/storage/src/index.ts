@@ -10,6 +10,7 @@ export interface TraceEventLike {
 
 export * from './query';
 export * from './file-store';
+export * from './sqlite-store';
 
 export class InMemoryTraceStore {
   private readonly events: TraceEventLike[] = [];
