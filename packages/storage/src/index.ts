@@ -1,3 +1,5 @@
+import { queryTraceEvents, type TraceEventQuery } from './query';
+
 export interface TraceEventLike {
   id: string;
   type: string;
@@ -6,6 +8,7 @@ export interface TraceEventLike {
   payload: Record<string, unknown>;
 }
 
+export * from './query';
 export * from './file-store';
 
 export class InMemoryTraceStore {
@@ -20,17 +23,18 @@ export class InMemoryTraceStore {
   }
 
   public listByType(type: string): TraceEventLike[] {
-    return this.events.filter((event) => event.type === type);
+    return this.query({ type });
   }
 
   public listByRequestId(requestId: string): TraceEventLike[] {
-    return this.events.filter((event) => {
-      const payload = event.payload as Record<string, unknown>;
-      return payload.requestId === requestId;
-    });
+    return this.query({ requestId }).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
   }
 
   public getTimeline(requestId: string): TraceEventLike[] {
-    return this.listByRequestId(requestId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    return this.listByRequestId(requestId);
+  }
+
+  public query(query: TraceEventQuery = {}): TraceEventLike[] {
+    return queryTraceEvents([...this.events], query);
   }
 }
