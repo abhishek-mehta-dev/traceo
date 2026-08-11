@@ -4,6 +4,11 @@ import { DashboardView } from './components/layout/Sidebar';
 import { OverviewPage } from './pages/OverviewPage';
 import { RequestsPage } from './pages/RequestsPage';
 import { RequestDetailPage } from './pages/RequestDetailPage';
+import { ErrorsPage } from './pages/ErrorsPage';
+import { QueriesPage } from './pages/QueriesPage';
+import { ExternalApisPage } from './pages/ExternalApisPage';
+import { AuthEventsPage } from './pages/AuthEventsPage';
+import { CustomEventsPage } from './pages/CustomEventsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { traceoClient } from './services/api';
@@ -95,6 +100,11 @@ export const App: React.FC = () => {
             {currentView === 'requests' && (
               <RequestsPage onSelectRequest={handleSelectRequest} />
             )}
+            {currentView === 'errors' && <ErrorsPage />}
+            {currentView === 'queries' && <QueriesPage />}
+            {currentView === 'external' && <ExternalApisPage />}
+            {currentView === 'auth' && <AuthEventsPage />}
+            {currentView === 'custom' && <CustomEventsPage />}
             {currentView === 'settings' && <SettingsPage />}
           </>
         )}

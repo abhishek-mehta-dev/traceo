@@ -1,19 +1,17 @@
 import type { TraceMetadata } from './http';
 
-export interface TraceErrorContext {
-  name?: string;
-  message: string;
-  stack?: string;
+export interface TraceAuthEventContext {
+  action: 'login' | 'logout' | 'login_failed' | 'token_refresh' | 'password_reset' | 'authorization_failed' | string;
+  userId?: string;
+  success?: boolean;
+  error?: string;
+  metadata?: Record<string, unknown>;
   requestId?: string;
   traceId?: string;
-  route?: string;
-  method?: string;
-  statusCode?: number;
-  metadata?: Record<string, unknown>;
   timestamp?: string;
 }
 
-const SENSITIVE_PATTERN = /authorization|token|password|secret|cookie|key|credential/i;
+const SENSITIVE_KEY_PATTERN = /authorization|token|password|secret|cookie|key|credential/i;
 
 function sanitizeValue(value: unknown): string | number | boolean | null | string[] {
   if (value === null || typeof value === 'boolean' || typeof value === 'number') {
@@ -33,7 +31,7 @@ function sanitizeMetadata(metadata?: Record<string, unknown>): TraceMetadata {
   const clean: TraceMetadata = {};
   for (const [k, v] of Object.entries(metadata)) {
     if (v === undefined) continue;
-    if (SENSITIVE_PATTERN.test(k)) {
+    if (SENSITIVE_KEY_PATTERN.test(k)) {
       clean[k] = '[REDACTED]';
     } else {
       clean[k] = sanitizeValue(v);
@@ -42,24 +40,25 @@ function sanitizeMetadata(metadata?: Record<string, unknown>): TraceMetadata {
   return clean;
 }
 
-export function createErrorEvent(context: TraceErrorContext) {
+export function createAuthEvent(context: TraceAuthEventContext) {
   const now = Date.now();
   const randomSuffix = Math.random().toString(16).slice(2, 10);
+  const action = context.action || 'auth_action';
+  const success = context.success ?? (!context.action.includes('failed') && !context.error);
+
   return {
-    id: `err_${now}_${randomSuffix}`,
-    type: 'ERROR',
+    id: `auth_${now}_${randomSuffix}`,
+    type: 'AUTH',
     timestamp: context.timestamp ?? new Date().toISOString(),
     source: 'core',
     payload: {
-      name: context.name ?? 'Error',
-      message: context.message,
-      stack: context.stack ?? '',
+      action,
+      userId: context.userId ?? 'anonymous',
+      success,
+      error: context.error ?? null,
+      metadata: sanitizeMetadata(context.metadata),
       requestId: context.requestId ?? null,
-      traceId: context.traceId ?? context.requestId ?? null,
-      route: context.route ?? null,
-      method: context.method ?? null,
-      statusCode: context.statusCode ?? 500,
-      metadata: sanitizeMetadata(context.metadata)
+      traceId: context.traceId ?? context.requestId ?? null
     }
   };
 }

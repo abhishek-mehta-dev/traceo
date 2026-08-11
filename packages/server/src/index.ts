@@ -77,6 +77,22 @@ function safeError(message: string, details?: string): TraceoErrorResponse {
   return details ? { error: message, details } : { error: message };
 }
 
+async function parseJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const parsed = body ? JSON.parse(body) : {};
+        resolve(parsed);
+      } catch (err) {
+        reject(new Error('Invalid JSON payload'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 function resolveAuthProvider(config: TraceoServerConfig): TraceoAuthProvider {
   const isEnabled = config.enabled ?? (process.env.TRACEO_ENABLED !== 'false');
   if (!isEnabled) {
@@ -174,6 +190,198 @@ export function createTraceoServer(config: TraceoServerConfig): TraceoServerInst
         sendJson(res, statusCode, safeError('Invalid request', message));
       }
       return;
+    }
+
+    if (req.method === 'GET' && pathname === '/errors') {
+      try {
+        const query = parseQuery(url);
+        const response = await service.listErrors({
+          page: parsePage(query.page),
+          limit: parseLimit(query.limit),
+          traceId: query.traceId,
+          requestId: query.requestId,
+          search: query.search
+        });
+        sendJson(res, 200, response);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'invalid request';
+        sendJson(res, 400, safeError('Invalid request', message));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/errors/')) {
+      const id = pathname.split('/').filter(Boolean)[1];
+      if (id) {
+        try {
+          const detail = await service.getErrorById(id);
+          if (!detail) {
+            sendJson(res, 404, safeError('Error event not found'));
+            return;
+          }
+          sendJson(res, 200, detail);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'storage failure';
+          sendJson(res, 500, safeError('Storage failure', message));
+        }
+        return;
+      }
+    }
+
+    if (req.method === 'GET' && pathname === '/queries') {
+      try {
+        const query = parseQuery(url);
+        const response = await service.listQueries({
+          page: parsePage(query.page),
+          limit: parseLimit(query.limit),
+          traceId: query.traceId,
+          requestId: query.requestId,
+          search: query.search
+        });
+        sendJson(res, 200, response);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'invalid request';
+        sendJson(res, 400, safeError('Invalid request', message));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/queries/')) {
+      const id = pathname.split('/').filter(Boolean)[1];
+      if (id) {
+        try {
+          const detail = await service.getQueryById(id);
+          if (!detail) {
+            sendJson(res, 404, safeError('Database query event not found'));
+            return;
+          }
+          sendJson(res, 200, detail);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'storage failure';
+          sendJson(res, 500, safeError('Storage failure', message));
+        }
+        return;
+      }
+    }
+
+    if (req.method === 'GET' && pathname === '/external-apis') {
+      try {
+        const query = parseQuery(url);
+        const response = await service.listExternalApis({
+          page: parsePage(query.page),
+          limit: parseLimit(query.limit),
+          traceId: query.traceId,
+          requestId: query.requestId,
+          search: query.search
+        });
+        sendJson(res, 200, response);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'invalid request';
+        sendJson(res, 400, safeError('Invalid request', message));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/external-apis/')) {
+      const id = pathname.split('/').filter(Boolean)[1];
+      if (id) {
+        try {
+          const detail = await service.getExternalApiById(id);
+          if (!detail) {
+            sendJson(res, 404, safeError('External API event not found'));
+            return;
+          }
+          sendJson(res, 200, detail);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'storage failure';
+          sendJson(res, 500, safeError('Storage failure', message));
+        }
+        return;
+      }
+    }
+
+    if (req.method === 'GET' && pathname === '/auth-events') {
+      try {
+        const query = parseQuery(url);
+        const response = await service.listAuthEvents({
+          page: parsePage(query.page),
+          limit: parseLimit(query.limit),
+          traceId: query.traceId,
+          requestId: query.requestId,
+          search: query.search
+        });
+        sendJson(res, 200, response);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'invalid request';
+        sendJson(res, 400, safeError('Invalid request', message));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/auth-events/')) {
+      const id = pathname.split('/').filter(Boolean)[1];
+      if (id) {
+        try {
+          const detail = await service.getAuthEventById(id);
+          if (!detail) {
+            sendJson(res, 404, safeError('Auth event not found'));
+            return;
+          }
+          sendJson(res, 200, detail);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'storage failure';
+          sendJson(res, 500, safeError('Storage failure', message));
+        }
+        return;
+      }
+    }
+
+    if (req.method === 'POST' && pathname === '/events') {
+      try {
+        const body = await parseJsonBody(req);
+        const result = await service.ingestEvent(body);
+        sendJson(res, 201, result);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'invalid event payload';
+        sendJson(res, 400, safeError('Failed to ingest event', message));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/custom-events') {
+      try {
+        const query = parseQuery(url);
+        const response = await service.listCustomEvents({
+          page: parsePage(query.page),
+          limit: parseLimit(query.limit),
+          traceId: query.traceId,
+          requestId: query.requestId,
+          search: query.search
+        });
+        sendJson(res, 200, response);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'invalid request';
+        sendJson(res, 400, safeError('Invalid request', message));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/custom-events/')) {
+      const id = pathname.split('/').filter(Boolean)[1];
+      if (id) {
+        try {
+          const detail = await service.getCustomEventById(id);
+          if (!detail) {
+            sendJson(res, 404, safeError('Custom event not found'));
+            return;
+          }
+          sendJson(res, 200, detail);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'storage failure';
+          sendJson(res, 500, safeError('Storage failure', message));
+        }
+        return;
+      }
     }
 
     if (req.method === 'GET' && pathname === '/requests') {

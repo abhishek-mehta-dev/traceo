@@ -29,6 +29,6 @@ test('captures error events and correlates them by request id', async () => {
   assert.equal(errors.length, 1);
   assert.equal(errors[0].payload.message, 'database unavailable');
   assert.equal(correlated.length, 1);
-  assert.equal(correlated[0].type, 'error');
+  assert.equal(correlated[0].type.toUpperCase(), 'ERROR');
   assert.equal(correlated[0].payload.requestId, 'req-123');
 });

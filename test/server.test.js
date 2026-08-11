@@ -23,15 +23,29 @@ test.after(() => {
 });
 
 test('server exposes health and timeline endpoints', async () => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  // Retry helper to wait for spawned server process to bind port
+  let health;
+  for (let i = 0; i < 20; i++) {
+    try {
+      health = await new Promise((resolve, reject) => {
+        const req = http.get({ hostname: '127.0.0.1', port: serverPort, path: '/health' }, (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', () => resolve({ statusCode: res.statusCode, body: data }));
+        });
+        req.on('error', reject);
+        req.setTimeout(500, () => {
+          req.destroy();
+          reject(new Error('timeout'));
+        });
+      });
+      break;
+    } catch {
+      await new Promise((r) => setTimeout(r, 150));
+    }
+  }
 
-  const health = await new Promise((resolve, reject) => {
-    http.get({ hostname: '127.0.0.1', port: serverPort, path: '/health' }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => resolve({ statusCode: res.statusCode, body: data }));
-    }).on('error', reject);
-  });
+  assert.ok(health, 'Server did not respond to /health within retry window');
 
   assert.equal(health.statusCode, 200);
   assert.match(health.body, /"status":"ok"/);

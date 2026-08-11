@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type DashboardView = 'overview' | 'requests' | 'settings';
+export type DashboardView = 'overview' | 'requests' | 'errors' | 'queries' | 'external' | 'auth' | 'custom' | 'settings';
 
 interface SidebarProps {
   currentView: DashboardView;
@@ -45,6 +45,77 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView, ser
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
             Requests
+          </button>
+        </div>
+
+        <div className="nav-item">
+          <button
+            className={currentView === 'errors' ? 'active' : ''}
+            onClick={() => onSelectView('errors')}
+            type="button"
+          >
+            <svg width="16" height="16" fill="none" stroke="var(--accent-rose)" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            Errors
+          </button>
+        </div>
+
+        <div className="nav-item">
+          <button
+            className={currentView === 'queries' ? 'active' : ''}
+            onClick={() => onSelectView('queries')}
+            type="button"
+          >
+            <svg width="16" height="16" fill="none" stroke="var(--accent-blue)" strokeWidth="2" viewBox="0 0 24 24">
+              <ellipse cx="12" cy="5" rx="9" ry="3" />
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+            </svg>
+            Queries
+          </button>
+        </div>
+
+        <div className="nav-item">
+          <button
+            className={currentView === 'external' ? 'active' : ''}
+            onClick={() => onSelectView('external')}
+            type="button"
+          >
+            <svg width="16" height="16" fill="none" stroke="var(--accent-emerald)" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+            </svg>
+            External APIs
+          </button>
+        </div>
+
+        <div className="nav-item">
+          <button
+            className={currentView === 'auth' ? 'active' : ''}
+            onClick={() => onSelectView('auth')}
+            type="button"
+          >
+            <svg width="16" height="16" fill="none" stroke="var(--accent-amber)" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            Auth Events
+          </button>
+        </div>
+
+        <div className="nav-item">
+          <button
+            className={currentView === 'custom' ? 'active' : ''}
+            onClick={() => onSelectView('custom')}
+            type="button"
+          >
+            <svg width="16" height="16" fill="none" stroke="var(--accent-primary)" strokeWidth="2" viewBox="0 0 24 24">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            Custom Events
           </button>
         </div>
 

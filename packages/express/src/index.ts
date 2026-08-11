@@ -1,4 +1,5 @@
 import {
+  createErrorEvent,
   createRequestCompletedEvent,
   createRequestStartedEvent,
   type TraceEventLike,
@@ -139,3 +140,25 @@ export function createTraceoMiddleware(options: TraceoExpressOptions) {
     next();
   };
 }
+
+export function createTraceoErrorHandler(options: TraceoExpressOptions) {
+  return (err: unknown, req: TraceoRequestLike, res: TraceoResponseLike, next: (e?: unknown) => void) => {
+    const errorObj = err instanceof Error ? err : new Error(String(err));
+    const statusCode = typeof res.statusCode === 'number' && res.statusCode >= 400 ? res.statusCode : 500;
+
+    const errorEvent = createErrorEvent({
+      name: errorObj.name,
+      message: errorObj.message,
+      stack: errorObj.stack,
+      requestId: req.traceoRequestId,
+      traceId: req.traceoTraceId,
+      route: getRoute(req) ?? req.originalUrl ?? req.url,
+      method: req.method,
+      statusCode
+    });
+
+    void options.sink.capture(errorEvent);
+    next(err);
+  };
+}
+

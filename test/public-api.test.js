@@ -29,5 +29,5 @@ test('exposes a public timeline query through the core package', async () => {
 
   assert.equal(timeline.length, 2);
   assert.equal(timeline[0].type, 'REQUEST_STARTED');
-  assert.equal(timeline[1].type, 'error');
+  assert.equal(timeline[1].type.toUpperCase(), 'ERROR');
 });

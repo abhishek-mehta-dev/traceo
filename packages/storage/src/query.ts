@@ -36,7 +36,7 @@ export function queryTraceEvents(events: TraceEventLike[], query: TraceEventQuer
   const search = query.search?.toLowerCase().trim();
   const filtered = events.filter((event) => {
     const payload = event.payload as Record<string, unknown>;
-    if (query.type !== undefined && event.type !== query.type) return false;
+    if (query.type !== undefined && event.type.toUpperCase() !== query.type.toUpperCase()) return false;
     if (query.source !== undefined && event.source !== query.source) return false;
     const httpPayload = payload as { requestId?: unknown; traceId?: unknown; request?: { method?: unknown }; response?: { statusCode?: unknown } };
     const requestId = httpPayload.requestId ?? (payload as { requestId?: unknown }).requestId;
