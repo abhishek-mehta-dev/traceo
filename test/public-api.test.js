@@ -28,6 +28,6 @@ test('exposes a public timeline query through the core package', async () => {
   const timeline = store.getTimeline(requestEvent.payload.requestId);
 
   assert.equal(timeline.length, 2);
-  assert.equal(timeline[0].type, 'request');
+  assert.equal(timeline[0].type, 'REQUEST_STARTED');
   assert.equal(timeline[1].type, 'error');
 });
