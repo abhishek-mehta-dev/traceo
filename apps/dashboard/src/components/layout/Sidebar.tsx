@@ -6,9 +6,10 @@ interface SidebarProps {
   currentView: DashboardView;
   onSelectView: (view: DashboardView) => void;
   serverOnline: boolean;
+  onLock?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView, serverOnline }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView, serverOnline, onLock }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -63,10 +64,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView, ser
       </nav>
 
       <div className="sidebar-footer">
-        <div className="server-status-pill">
+        <div className="server-status-pill" style={{ marginBottom: 8 }}>
           <span className={`status-dot ${serverOnline ? '' : 'offline'}`}></span>
           <span>{serverOnline ? 'Server Online' : 'Server Disconnected'}</span>
         </div>
+        {onLock && (
+          <button
+            onClick={onLock}
+            style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'underline' }}
+            type="button"
+          >
+            Lock Dashboard
+          </button>
+        )}
       </div>
     </aside>
   );

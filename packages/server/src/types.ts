@@ -1,4 +1,5 @@
 import type { TraceEventQuery } from '@traceo/storage';
+import type { TraceoAuthProvider } from './auth';
 
 export interface TraceoServerConfig {
   host?: string;
@@ -6,6 +7,10 @@ export interface TraceoServerConfig {
   storage: TraceoStorageLike;
   basePath?: string;
   corsOrigin?: string;
+  enabled?: boolean;
+  authRequired?: boolean;
+  apiKey?: string;
+  authProvider?: TraceoAuthProvider;
 }
 
 export interface TraceoStorageLike {

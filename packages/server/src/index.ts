@@ -4,9 +4,11 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { RequestService } from './service';
 import type { TraceoErrorResponse, TraceoServerConfig, TraceoStorageLike } from './types';
+import { ApiKeyAuthProvider, DisabledAuthProvider, NoopAuthProvider, type TraceoAuthProvider } from './auth';
 
 export * from './types';
 export * from './service';
+export * from './auth';
 
 export interface TraceoServerInstance {
   server: Server;
@@ -19,11 +21,18 @@ function sendJson(res: ServerResponse, statusCode: number, body: unknown): void 
   res.end(JSON.stringify(body));
 }
 
+function setSecurityHeaders(res: ServerResponse): void {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+}
+
 function parsePage(raw: string | undefined): number | undefined {
   if (raw === undefined) {
     return undefined;
   }
-
   const parsed = Number(raw);
   return Number.isInteger(parsed) ? parsed : undefined;
 }
@@ -32,7 +41,6 @@ function parseLimit(raw: string | undefined): number | undefined {
   if (raw === undefined) {
     return undefined;
   }
-
   const parsed = Number(raw);
   return Number.isInteger(parsed) ? parsed : undefined;
 }
@@ -69,14 +77,39 @@ function safeError(message: string, details?: string): TraceoErrorResponse {
   return details ? { error: message, details } : { error: message };
 }
 
+function resolveAuthProvider(config: TraceoServerConfig): TraceoAuthProvider {
+  const isEnabled = config.enabled ?? (process.env.TRACEO_ENABLED !== 'false');
+  if (!isEnabled) {
+    return new DisabledAuthProvider();
+  }
+
+  if (config.authProvider) {
+    return config.authProvider;
+  }
+
+  const apiKey = config.apiKey ?? process.env.TRACEO_API_KEY;
+  if (apiKey && apiKey.trim() !== '') {
+    return new ApiKeyAuthProvider(apiKey.trim());
+  }
+
+  if (config.authRequired) {
+    return new DisabledAuthProvider();
+  }
+
+  return new NoopAuthProvider();
+}
+
 export function createTraceoServer(config: TraceoServerConfig): TraceoServerInstance {
   const service = new RequestService(config.storage);
+  const authProvider = resolveAuthProvider(config);
   const host = config.host ?? '127.0.0.1';
   const port = config.port ?? 3030;
   const basePath = config.basePath ?? '';
   const corsOrigin = config.corsOrigin;
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    setSecurityHeaders(res);
+
     if (!req.url) {
       sendJson(res, 400, safeError('Missing URL'));
       return;
@@ -87,8 +120,8 @@ export function createTraceoServer(config: TraceoServerConfig): TraceoServerInst
 
     if (corsOrigin) {
       res.setHeader('Access-Control-Allow-Origin', corsOrigin);
-      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Traceo-Api-Key');
     }
 
     if (req.method === 'OPTIONS') {
@@ -98,6 +131,25 @@ export function createTraceoServer(config: TraceoServerConfig): TraceoServerInst
 
     if (req.method === 'GET' && pathname === '/health') {
       sendJson(res, 200, { status: 'ok' });
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/auth/verify') {
+      const authResult = await authProvider.authenticate(req);
+      if (authResult.authenticated) {
+        sendJson(res, 200, { authenticated: true, principal: authResult.principal });
+      } else {
+        const statusCode = authResult.statusCode || 401;
+        sendJson(res, statusCode, safeError('Authentication failed', authResult.reason));
+      }
+      return;
+    }
+
+    // Protection boundary for all data endpoints
+    const authResult = await authProvider.authenticate(req);
+    if (!authResult.authenticated) {
+      const statusCode = authResult.statusCode || 401;
+      sendJson(res, statusCode, safeError(authResult.reason || 'Unauthorized'));
       return;
     }
 
