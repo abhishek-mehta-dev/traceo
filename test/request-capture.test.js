@@ -23,7 +23,7 @@ test('captures request events through the core pipeline', async () => {
   await core.capture(event);
 
   assert.equal(captured.length, 1);
-  assert.equal(captured[0].type, 'request');
-  assert.equal(captured[0].payload.url, '/health');
-  assert.equal(captured[0].payload.statusCode, 200);
+  assert.equal(captured[0].type, 'REQUEST_STARTED');
+  assert.equal(captured[0].payload.request.url, '/health');
+  assert.match(captured[0].payload.traceId, /^trace-/);
 });

@@ -37,9 +37,13 @@ export function queryTraceEvents(events: TraceEventLike[], query: TraceEventQuer
     const payload = event.payload as Record<string, unknown>;
     if (query.type !== undefined && event.type !== query.type) return false;
     if (query.source !== undefined && event.source !== query.source) return false;
-    if (query.requestId !== undefined && payload.requestId !== query.requestId) return false;
-    if (query.method !== undefined && payload.method !== query.method) return false;
-    if (query.statusCode !== undefined && payload.statusCode !== query.statusCode) return false;
+    const httpPayload = payload as { requestId?: unknown; request?: { method?: unknown }; response?: { statusCode?: unknown } };
+    const requestId = httpPayload.requestId ?? (payload as { traceId?: unknown }).traceId;
+    const method = payload.method ?? httpPayload.request?.method;
+    const statusCode = payload.statusCode ?? httpPayload.response?.statusCode;
+    if (query.requestId !== undefined && requestId !== query.requestId) return false;
+    if (query.method !== undefined && method !== query.method) return false;
+    if (query.statusCode !== undefined && statusCode !== query.statusCode) return false;
     if (!timestampIsWithinRange(event.timestamp, query)) return false;
     if (search !== undefined && search.length > 0) {
       const haystack = normalizeSearchValue({ id: event.id, type: event.type, source: event.source, payload: event.payload });
