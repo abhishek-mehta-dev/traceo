@@ -1,56 +1,68 @@
 # Traceo Dashboard API
 
+The Traceo server (`@traceo/server`) exposes a clean, lightweight HTTP API designed for consumption by the Traceo Dashboard and SDK (`@traceo/dashboard-sdk`).
+
 ## Base URL
 
-The Traceo server exposes a lightweight HTTP API for dashboard consumption.
+Default server configuration:
+- Host: `127.0.0.1` (configurable)
+- Port: `3030` (configurable)
+- Base URL: `http://127.0.0.1:3030`
 
-Default base URL:
+CORS support can be enabled via `corsOrigin` configuration option.
 
-- http://127.0.0.1:3030
+---
 
 ## Endpoints
 
-### Health
+### 1. Health Check
 
-GET /health
+`GET /health`
 
-Response:
+Returns a simple successful JSON payload confirming server readiness. Does not expose internal secrets or database paths.
 
+#### Response (200 OK)
 ```json
 {
   "status": "ok"
 }
 ```
 
-### Request list
+---
 
-GET /requests
+### 2. Request List
 
-Supported query parameters:
+`GET /requests`
 
-- page: positive integer, default 1
-- limit: positive integer up to 100, default 25
-- sort: timestamp | duration | statusCode
-- order: ASC | DESC
-- method: HTTP method filter
-- status: numeric status code filter
-- eventType: Traceo event type filter
-- traceId: trace identifier filter
-- requestId: request identifier filter
-- search: free-text search over event content
+Returns stored Traceo request-related events in a lightweight, dashboard-friendly summary format.
 
-Response:
+#### Query Parameters
 
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `page` | integer | `1` | Page number (must be `>= 1`). |
+| `limit` | integer | `25` | Items per page (must be `>= 1` and `<= 100`). |
+| `sort` | string | `timestamp` | Sort field: `timestamp`, `duration`, `statusCode`. |
+| `order` | string | `DESC` | Sort direction: `ASC` or `DESC`. |
+| `method` | string | optional | Filter by HTTP method (e.g. `GET`, `POST`). |
+| `status` | integer | optional | Filter by numeric HTTP status code (e.g. `200`, `500`). |
+| `eventType` | string | optional | Filter by event type (`REQUEST_STARTED`, `REQUEST_COMPLETED`). |
+| `traceId` | string | optional | Filter events by specific trace ID. |
+| `requestId` | string | optional | Filter events by specific request ID. |
+| `search` | string | optional | Free-text search query across event payloads. |
+
+#### Response (200 OK)
 ```json
 {
   "data": [
     {
-      "id": "evt-1",
+      "id": "evt-2",
       "traceId": "trace-1",
       "requestId": "req-1",
       "eventType": "REQUEST_COMPLETED",
       "method": "GET",
       "url": "/users",
+      "route": "/users",
       "statusCode": 200,
       "durationMs": 42,
       "timestamp": "2026-01-01T00:00:01.000Z"
@@ -65,20 +77,88 @@ Response:
 }
 ```
 
-### Request detail
+---
 
-GET /requests/:id
+### 3. Request Detail
 
-Returns the stored event payload and metadata for the requested event ID.
+`GET /requests/:id`
 
-### Trace timeline
+Returns complete event details and captured metadata for the specified event ID. Masked sensitive keys remain redacted.
 
-GET /requests/:traceId/timeline
+#### Response (200 OK)
+```json
+{
+  "id": "evt-2",
+  "traceId": "trace-1",
+  "requestId": "req-1",
+  "eventType": "REQUEST_COMPLETED",
+  "method": "GET",
+  "url": "/users",
+  "route": "/users",
+  "statusCode": 200,
+  "durationMs": 42,
+  "timestamp": "2026-01-01T00:00:01.000Z",
+  "request": {
+    "method": "GET",
+    "url": "/users"
+  },
+  "response": {
+    "statusCode": 200,
+    "durationMs": 42
+  },
+  "payload": {
+    "traceId": "trace-1",
+    "requestId": "req-1"
+  }
+}
+```
 
-Returns all events that belong to the requested trace ID in chronological order.
+---
 
-## Error responses
+### 4. Trace Timeline
 
-- 400: invalid pagination, sorting, or filtering values
-- 404: missing resource
-- 500: unexpected storage or server failure
+`GET /requests/:traceId/timeline`
+
+Returns all events associated with a specific trace ID in chronological order.
+
+#### Response (200 OK)
+```json
+{
+  "traceId": "trace-1",
+  "events": [
+    {
+      "id": "evt-1",
+      "traceId": "trace-1",
+      "requestId": "req-1",
+      "eventType": "REQUEST_STARTED",
+      "timestamp": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "evt-2",
+      "traceId": "trace-1",
+      "requestId": "req-1",
+      "eventType": "REQUEST_COMPLETED",
+      "timestamp": "2026-01-01T00:00:01.000Z"
+    }
+  ]
+}
+```
+
+---
+
+## Error Response Format
+
+Errors return consistent JSON error objects:
+
+```json
+{
+  "error": "Invalid request",
+  "details": "invalid sort"
+}
+```
+
+### Common HTTP Status Codes
+
+- **400 Bad Request**: Invalid pagination (`page < 1`, `limit > 100`), unapproved sort field, or malformed parameters.
+- **404 Not Found**: Request ID not found in storage or unknown endpoint path.
+- **500 Internal Server Error**: Unexpected storage or internal server failure (no SQL statements, secrets, or stack traces exposed).

@@ -14,7 +14,7 @@
   "devDependencies": {
     "@types/node": "^24.13.3",
     "turbo": "^2.10.8",
-    "typescript": "^7.0.2"
+    "typescript": "^5.7.3"
   },
   "private": true,
   "workspaces": [

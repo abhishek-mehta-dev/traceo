@@ -5,6 +5,9 @@ import { join } from 'node:path';
 import { RequestService } from './service';
 import type { TraceoErrorResponse, TraceoServerConfig, TraceoStorageLike } from './types';
 
+export * from './types';
+export * from './service';
+
 export interface TraceoServerInstance {
   server: Server;
   listen(port?: number, host?: string): Server;

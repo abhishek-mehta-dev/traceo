@@ -87,15 +87,27 @@ function resolveSort(sort: string | undefined, order: string | undefined): { sor
 
 function applySorting(events: Record<string, unknown>[], sortField: string, direction: 'ASC' | 'DESC'): Record<string, unknown>[] {
   return [...events].sort((left, right) => {
-    const leftValue = left[sortField] as Record<string, unknown> | undefined;
-    const rightValue = right[sortField] as Record<string, unknown> | undefined;
-    const leftComparable = sortField === 'timestamp' ? String(leftValue ?? '') : Number(leftValue ?? 0);
-    const rightComparable = sortField === 'timestamp' ? String(rightValue ?? '') : Number(rightValue ?? 0);
+    const leftSummary = toSummary(left);
+    const rightSummary = toSummary(right);
 
-    if (leftComparable < rightComparable) {
+    let leftVal: string | number = 0;
+    let rightVal: string | number = 0;
+
+    if (sortField === 'timestamp') {
+      leftVal = leftSummary.timestamp;
+      rightVal = rightSummary.timestamp;
+    } else if (sortField === 'duration') {
+      leftVal = leftSummary.durationMs ?? 0;
+      rightVal = rightSummary.durationMs ?? 0;
+    } else if (sortField === 'statusCode') {
+      leftVal = leftSummary.statusCode ?? 0;
+      rightVal = rightSummary.statusCode ?? 0;
+    }
+
+    if (leftVal < rightVal) {
       return direction === 'ASC' ? -1 : 1;
     }
-    if (leftComparable > rightComparable) {
+    if (leftVal > rightVal) {
       return direction === 'ASC' ? 1 : -1;
     }
     return 0;

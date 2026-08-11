@@ -6,6 +6,7 @@
     { "path": "./packages/storage" },
     { "path": "./packages/express" },
     { "path": "./packages/cli" },
-    { "path": "./packages/server" }
+    { "path": "./packages/server" },
+    { "path": "./packages/dashboard-sdk" }
   ]
 }
