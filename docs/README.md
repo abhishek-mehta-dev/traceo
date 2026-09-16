@@ -25,3 +25,4 @@ This folder contains the core product and engineering documentation for Traceo.
 - [CHANGELOG](CHANGELOG.md)
 - [RELEASE_PROCESS](RELEASE_PROCESS.md)
 - [API_GUIDE](API_GUIDE.md)
+- [Dogfooding](process/DOGFOODING.md)

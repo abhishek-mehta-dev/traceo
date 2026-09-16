@@ -1,6 +1,6 @@
 # Traceo Phase Plan
 
-Phases 1 through 10 of the first vertical slice are complete.
+Phases 1 through 11 of the first vertical slice and Express dogfooding are complete.
 
 ```text
 PHASE 3  Storage Abstraction     ✅
@@ -11,6 +11,7 @@ PHASE 7  Working Express Example ✅
 PHASE 8  NestJS Integration      ✅
 PHASE 9  Security / Authentication ✅
 PHASE 10 Error Monitoring        ✅
+PHASE 11 Express dogfooding      ✅
 ```
 
 ## Phase 5 — SQLite Adapter ✅
@@ -31,5 +32,8 @@ Server binds to `127.0.0.1` by default. Dashboard is off in production unless `T
 ## Phase 10 — Error Monitoring ✅
 Express `createTraceoErrorHandler` and Nest `createTraceoExceptionFilter` capture request-correlated errors. The dashboard shows error counts and error events on the timeline.
 
-## After Phase 10
-PRD items still later: Prisma/Mongoose, live requests, external API/cache/queue monitoring, additional frameworks, plugin marketplace.
+## Phase 11 — Real Express dogfooding ✅
+`amity-ai-assistant-backend` runs `@traceo/express` with SQLite and the dashboard. Results: [DOGFOODING.md](DOGFOODING.md).
+
+## After Phase 11
+PRD items still later: Prisma/Mongoose, live request streaming, additional frameworks, plugin marketplace. Next implementation phase should follow issues in [DOGFOODING.md](DOGFOODING.md).

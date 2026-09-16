@@ -43,7 +43,8 @@ Express request
 - `getById(id)` — return that event or `null`
 - `query(options)` — filter events
 - `getTimeline(requestId)` — correlated events for one request
-- `cleanup({ olderThan })` — delete older events; returns the removed count
+- `cleanup({ olderThan })` — delete older events; returns the removed count. Without `olderThan`, this is a no-op.
+- `clear()` — delete every stored event; returns the removed count
 - `close()` — release resources; later calls fail with a closed-storage error
 
 Query filters preserved from the current implementation:

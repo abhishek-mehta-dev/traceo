@@ -53,6 +53,15 @@
       border-color: rgba(94, 234, 212, 0.45);
       color: var(--trace);
     }
+    button.danger {
+      color: var(--rose);
+      border-color: rgba(251, 113, 133, 0.35);
+      background: rgba(251, 113, 133, 0.08);
+    }
+    button.danger:hover:not(:disabled) {
+      border-color: rgba(251, 113, 133, 0.55);
+      background: rgba(251, 113, 133, 0.16);
+    }
     button:focus-visible, input:focus-visible, select:focus-visible, .hop:focus-visible, .node:focus-visible {
       outline: 2px solid var(--trace);
       outline-offset: 2px;
@@ -477,13 +486,24 @@
     }
     pre.code {
       margin: 0;
-      padding: 12px 14px;
+      padding: 14px 18px 20px;
       overflow: auto;
       white-space: pre;
       tab-size: 2;
       background: var(--void);
       color: #d7e2ee;
-      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+      font: 12.5px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .json-note {
+      margin: 0;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--stroke);
+      color: var(--amber);
+      font-size: 11px;
+    }
+    .json-tree .js {
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .jk { color: var(--trace); }
     .js { color: #fde68a; }
@@ -509,6 +529,7 @@
       min-height: 0;
       max-height: none;
       overflow: auto;
+      overscroll-behavior: contain;
       padding: 12px 16px 18px;
       font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
     }
@@ -757,6 +778,7 @@
         <span class="pulse" id="live-dot" aria-hidden="true"></span>
         <button id="live" type="button" title="Toggle live (L)" aria-pressed="false">Live</button>
         <button id="reload" type="button" title="Refresh (R)">Refresh</button>
+        <button id="clear-all" class="danger" type="button" title="Clear all captured hops">Clear all</button>
         <span class="hint" id="status" aria-live="polite">Loading…</span>
       </div>
     </header>
@@ -840,6 +862,7 @@
       <div class="modal-body" id="modal-body"></div>
     </div>
   </div>
+  <script src="/json-preview.js"></script>
   <script>
     const state = {
       requests: [],
@@ -867,7 +890,8 @@
       filteredCount: 0,
       facets: {},
       selectedSummary: null,
-      loadGen: 0
+      loadGen: 0,
+      clearing: false
     };
 
     const els = {
@@ -972,6 +996,15 @@
       return out;
     }
 
+    const { looksLikeJson, parseJsonPreview, expandJsonValue } = window.TraceoJsonPreview;
+
+    function captureWasTruncated(value) {
+      if (!value || typeof value !== 'object') return false;
+      if (value.bodyTruncated === true) return true;
+      const payload = value.payload || {};
+      return Boolean(payload.request?.bodyTruncated || payload.response?.bodyTruncated);
+    }
+
     function jsonLeaf(value) {
       if (value === null) return '<span class="jnull">null</span>';
       if (typeof value === 'boolean') return '<span class="jb">' + value + '</span>';
@@ -980,13 +1013,21 @@
       return '<span class="js">' + escapeHtml(String(value)) + '</span>';
     }
 
-    function isJsonOpen(path, depth) {
+    function isJsonOpen(path, depth, value) {
       if (state.jsonClosed.has(path)) return false;
       if (state.jsonOpen.has(path)) return true;
-      return depth < 3;
+      if (Array.isArray(value) && value.length > 16) return depth < 2;
+      return depth < 5;
     }
 
     function jsonTree(value, path, depth, key) {
+      if (typeof value === 'string' && looksLikeJson(value)) {
+        const parsed = parseJsonPreview(value);
+        if (typeof parsed.value !== 'string') {
+          if (parsed.recovered) state.jsonRecovered = true;
+          return jsonTree(parsed.value, path, depth, key);
+        }
+      }
       const label = key === undefined
         ? ''
         : '<span class="jk">' + escapeHtml(key) + '</span><span class="jpunct">: </span>';
@@ -1002,7 +1043,7 @@
           return '<div class="j-line">' + spacer + label + '<span class="jpunct">' + openBrace + closeBrace + '</span></div>';
         }
 
-        const open = isJsonOpen(path, depth);
+        const open = isJsonOpen(path, depth, value);
         const toggle = '<button type="button" class="j-toggle" data-json-path="' + escapeHtml(path) + '" data-json-depth="' + depth + '" aria-label="Toggle">' + (open ? '▾' : '▸') + '</button>';
 
         if (!open) {
@@ -1025,16 +1066,20 @@
     }
 
     function jsonPanel(value) {
-      const parsed = value === undefined ? null : prettyValue(value);
-      const raw = JSON.stringify(parsed, null, 2);
+      const acc = { recovered: false };
+      const parsed = value === undefined ? null : expandJsonValue(value, 0, acc);
+      const pretty = JSON.stringify(parsed, null, 2);
       const id = 'json-' + jsonCopies.size + '-' + Math.random().toString(16).slice(2);
-      jsonCopies.set(id, raw);
+      jsonCopies.set(id, pretty);
+      const truncated = captureWasTruncated(value) || acc.recovered || state.jsonRecovered;
+      state.jsonRecovered = false;
       return '<div class="json-panel">' +
         '<div class="json-tools">' +
           '<button type="button" class="' + (state.jsonMode === 'tree' ? 'active' : '') + '" data-json-mode="tree">Tree</button>' +
-          '<button type="button" class="' + (state.jsonMode === 'raw' ? 'active' : '') + '" data-json-mode="raw">Raw</button>' +
+          '<button type="button" class="' + (state.jsonMode === 'raw' ? 'active' : '') + '" data-json-mode="raw">Pretty</button>' +
           '<button type="button" class="ghost" data-json-copy="' + id + '">Copy</button>' +
         '</div>' +
+        (truncated ? '<p class="json-note">Captured body was truncated. This is a formatted preview of the stored slice.</p>' : '') +
         (state.jsonMode === 'raw'
           ? '<pre class="code">' + highlightJson(parsed) + '</pre>'
           : '<div class="json-tree">' + jsonTree(parsed, id, 0) + '</div>') +
@@ -1059,24 +1104,44 @@
       return state.modal.value;
     }
 
+    function modalScroller() {
+      return els.modalBody.querySelector('.json-tree, pre.code');
+    }
+
+    function keepModalJsonCopies() {
+      const kept = new Map();
+      if (!state.modal) return kept;
+      els.modalBody.querySelectorAll('[data-json-copy]').forEach((el) => {
+        const id = el.dataset.jsonCopy;
+        if (id && jsonCopies.has(id)) kept.set(id, jsonCopies.get(id));
+      });
+      return kept;
+    }
+
     function openModal(modal) {
       state.modal = modal;
-      renderModal();
+      renderModal({ resetScroll: true });
     }
 
     function closeModal() {
       state.modal = null;
       renderModal();
+      loadRequests().catch((err) => { els.status.textContent = err.message; });
     }
 
-    function renderModal() {
+    function renderModal(options = {}) {
       if (!state.modal) {
         els.modal.hidden = true;
+        els.modalBody.innerHTML = '';
         return;
       }
+      const previous = modalScroller();
+      const scroll = options.resetScroll ? 0 : (previous ? previous.scrollTop : 0);
       els.modal.hidden = false;
       els.modalTitle.textContent = state.modal.title;
       els.modalBody.innerHTML = jsonPanel(modalValue());
+      const next = modalScroller();
+      if (next) next.scrollTop = scroll;
     }
 
     function highlightMatch(text) {
@@ -1105,10 +1170,48 @@
       toast(message);
     }
 
-    async function api(path) {
-      const res = await fetch(path);
+    async function api(path, options) {
+      const res = await fetch(path, options);
       if (!res.ok) throw new Error('Request failed');
       return res.json();
+    }
+
+    function setClearing(on) {
+      state.clearing = on;
+      document.querySelectorAll('#clear-all').forEach((button) => {
+        button.disabled = on;
+      });
+    }
+
+    async function clearAllRequests() {
+      if (state.clearing) return;
+      if (!window.confirm('Clear every captured hop and event from Traceo? This cannot be undone.')) {
+        return;
+      }
+      setClearing(true);
+      try {
+        const result = await api('/requests', { method: 'DELETE' });
+        closeModal();
+        state.requests = [];
+        state.selected = null;
+        state.selectedSummary = null;
+        state.timeline = [];
+        state.eventId = null;
+        state.known = new Set();
+        state.facets = {};
+        state.filteredCount = 0;
+        resetToFirstPage();
+        if (location.hash) {
+          history.replaceState(null, '', location.pathname + location.search);
+        }
+        const removed = Number(result && result.removed) || 0;
+        toast(removed === 1 ? 'Cleared 1 event' : 'Cleared ' + removed + ' events');
+        await loadRequests({ refreshTimeline: false });
+      } catch (err) {
+        els.status.textContent = err.message;
+      } finally {
+        setClearing(false);
+      }
     }
 
     function statusClass(code, errorCount) {
@@ -1313,7 +1416,7 @@
         }
         return '<p class="note">No ' + side + ' body was captured.</p>';
       }
-      return jsonPanel(prettyValue(body));
+      return jsonPanel(body);
     }
 
     function block(title, inner) {
@@ -1322,11 +1425,7 @@
 
     function prettyValue(value) {
       if (value === undefined) return undefined;
-      return typeof value === 'string' ? tryPretty(value) : value;
-    }
-
-    function tryPretty(value) {
-      try { return JSON.parse(value); } catch { return value; }
+      return expandJsonValue(value, 0, { recovered: false });
     }
 
     function updateChrome() {
@@ -1441,7 +1540,9 @@
     }
 
     function renderDetail() {
+      const modalCopies = keepModalJsonCopies();
       jsonCopies.clear();
+      modalCopies.forEach((value, id) => jsonCopies.set(id, value));
       const request = selectedRequest();
       const scroll = els.inspect.scrollTop;
       if (!request) {
@@ -1495,7 +1596,6 @@
           rail(state.timeline) +
           '</div></div>';
       }
-      if (state.modal) renderModal();
       els.inspect.scrollTop = scroll;
     }
 
@@ -1553,12 +1653,12 @@
       });
       const wasFollowing = state.following || !state.selected || state.selected === previousNewest;
       state.requests = incoming;
-      if (!state.selected && incoming[0]) {
+      if (!state.selected && !state.modal && incoming[0]) {
         state.selected = incoming[0].requestId;
         state.selectedSummary = incoming[0];
         state.following = state.page === 1;
         location.hash = encodeURIComponent(state.selected);
-      } else if (state.live && wasFollowing && state.page === 1 && incoming[0] && incoming[0].requestId !== state.selected) {
+      } else if (state.live && wasFollowing && !state.modal && state.page === 1 && incoming[0] && incoming[0].requestId !== state.selected) {
         state.selected = incoming[0].requestId;
         state.selectedSummary = incoming[0];
         state.following = true;
@@ -1573,6 +1673,7 @@
       els.stream.scrollTop = (state.live && state.following) ? 0 : top;
       setTimeout(() => { state.requests.forEach((item) => { item._flash = false; }); }, 900);
       els.status.textContent = state.live ? 'Live' : 'Updated ' + new Date().toLocaleTimeString();
+      if (state.modal) return;
       if (state.selected && incoming.some((item) => item.requestId === state.selected)) {
         if (options.refreshTimeline !== false) {
           const dataTimeline = await api('/timeline/' + encodeURIComponent(state.selected));
@@ -1610,6 +1711,12 @@
       if (button) setMobilePane(button.dataset.pane);
     });
     els.live.addEventListener('click', () => setLive(!state.live));
+    document.getElementById('reload').addEventListener('click', () => {
+      loadRequests().catch((err) => { els.status.textContent = err.message; });
+    });
+    document.getElementById('clear-all').addEventListener('click', () => {
+      clearAllRequests();
+    });
     document.getElementById('empty-live').addEventListener('click', () => setLive(true));
     els.search.addEventListener('input', debounce(() => {
       resetToFirstPage();

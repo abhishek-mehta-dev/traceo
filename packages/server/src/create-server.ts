@@ -236,7 +236,7 @@ export function summarizeRequests(events: TraceEventLike[]): TraceRequestSummary
     }
     if (response?.statusCode !== undefined) {
       current.statusCode = response.statusCode;
-    } else if (typeof event.payload.statusCode === 'number') {
+    } else if (current.statusCode === undefined && typeof event.payload.statusCode === 'number') {
       current.statusCode = event.payload.statusCode;
     }
     if (response?.durationMs !== undefined) {
@@ -338,6 +338,12 @@ export function createTraceoServer(options: TraceoServerOptions): Server {
           ...page,
           facets: requestFacets(all)
         });
+        return;
+      }
+
+      if (req.method === 'DELETE' && url.pathname === '/requests') {
+        const removed = await storage.clear();
+        sendJson(res, 200, { removed });
         return;
       }
 

@@ -71,6 +71,13 @@ export class FileTraceStore implements TraceoStorage {
     return events.length - remaining.length;
   }
 
+  public async clear(): Promise<number> {
+    assertOpen(this.closed);
+    const events = this.readEvents();
+    this.writeEvents([]);
+    return events.length;
+  }
+
   public async close(): Promise<void> {
     this.closed = true;
   }

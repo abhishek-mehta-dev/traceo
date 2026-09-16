@@ -54,6 +54,13 @@ export class InMemoryTraceStore implements TraceoStorage {
     return removed;
   }
 
+  public async clear(): Promise<number> {
+    assertOpen(this.closed);
+    const removed = this.events.length;
+    this.events.length = 0;
+    return removed;
+  }
+
   public async close(): Promise<void> {
     this.closed = true;
   }

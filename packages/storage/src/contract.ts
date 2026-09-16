@@ -6,5 +6,6 @@ export interface TraceoStorage {
   query(query?: TraceEventQuery): Promise<TraceEventLike[]>;
   getTimeline(requestId: string): Promise<TraceEventLike[]>;
   cleanup(options?: TraceCleanupOptions): Promise<number>;
+  clear(): Promise<number>;
   close(): Promise<void>;
 }

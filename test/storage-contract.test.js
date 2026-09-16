@@ -99,6 +99,26 @@ function runStorageContractTests(name, createStore) {
     assert.equal((await store.getById('new')).id, 'new');
   });
 
+  test(`${name} cleanup without olderThan does not wipe events`, async (t) => {
+    const store = await createStore(t);
+    await store.capture(createEvent({ id: 'keep' }));
+    assert.equal(await store.cleanup(), 0);
+    assert.equal((await store.getById('keep')).id, 'keep');
+  });
+
+  test(`${name} clear removes every stored event`, async (t) => {
+    const store = await createStore(t);
+    await store.capture(createEvent({ id: 'one' }));
+    await store.capture(createEvent({ id: 'two', timestamp: '2026-01-01T00:00:01.000Z' }));
+
+    const removed = await store.clear();
+    assert.equal(removed, 2);
+    assert.equal(await store.getById('one'), null);
+    assert.equal(await store.getById('two'), null);
+    assert.equal((await store.query()).length, 0);
+    assert.equal(await store.clear(), 0);
+  });
+
   test(`${name} close prevents later use`, async (t) => {
     const store = await createStore(t);
     await store.close();

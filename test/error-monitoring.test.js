@@ -29,3 +29,38 @@ test('Express error handler captures correlated error events', async () => {
   assert.equal(error.payload.requestId, req.traceoRequestId);
   assert.equal(error.payload.method, 'GET');
 });
+
+test('request summaries keep the completed HTTP status when an error event also exists', () => {
+  const {
+    summarizeRequests
+  } = require(path.resolve(__dirname, '../packages/server/dist/create-server.js'));
+
+  const summaries = summarizeRequests([
+    {
+      id: '1',
+      type: 'REQUEST_COMPLETED',
+      timestamp: '2026-01-01T00:00:01.000Z',
+      source: 'core',
+      payload: {
+        requestId: 'req-422',
+        request: { method: 'POST', url: '/api/auth/login' },
+        response: { statusCode: 422, durationMs: 8 }
+      }
+    },
+    {
+      id: '2',
+      type: 'error',
+      timestamp: '2026-01-01T00:00:01.100Z',
+      source: 'core',
+      payload: {
+        requestId: 'req-422',
+        message: '"email" must be a valid email',
+        statusCode: 500
+      }
+    }
+  ]);
+
+  assert.equal(summaries.length, 1);
+  assert.equal(summaries[0].statusCode, 422);
+  assert.equal(summaries[0].errorCount, 1);
+});

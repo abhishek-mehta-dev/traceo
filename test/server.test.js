@@ -6,7 +6,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 let serverProcess;
-let serverPort = 3031;
+let serverPort = 3041;
 
 test.before(() => {
   const dataFile = path.join(__dirname, 'tmp-server-events.json');

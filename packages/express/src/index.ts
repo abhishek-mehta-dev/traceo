@@ -157,7 +157,7 @@ export function createTraceoMiddleware(options: TraceoExpressOptions) {
 
 export function createTraceoErrorHandler(options: TraceoExpressOptions) {
   return (error: unknown, req: TraceoRequestLike, res: TraceoResponseLike, next: TraceoNextFunction) => {
-    captureRequestError(options, req, error, res.statusCode && res.statusCode >= 400 ? res.statusCode : 500);
+    captureRequestError(options, req, error, res.statusCode && res.statusCode >= 400 ? res.statusCode : undefined);
     next(error);
   };
 }

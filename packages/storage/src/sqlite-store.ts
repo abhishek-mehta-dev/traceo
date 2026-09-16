@@ -144,6 +144,16 @@ export class SqliteTraceStore implements TraceoStorage {
     }
   }
 
+  public async clear(): Promise<number> {
+    assertOpen(this.closed);
+    try {
+      const result = this.db.prepare('DELETE FROM events').run();
+      return Number(result.changes ?? 0);
+    } catch {
+      throw new TraceoStorageError(TraceoStorageErrorCode.UNAVAILABLE, 'Stored events could not be written');
+    }
+  }
+
   public async close(): Promise<void> {
     if (this.closed) {
       return;
