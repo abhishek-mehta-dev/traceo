@@ -29,6 +29,7 @@ test('creates canonical request started events with identifiers and sanitized me
   assert.equal(event.type, TRACE_HTTP_EVENT_TYPES.requestStarted);
   assert.equal(event.timestamp, '2026-01-01T00:00:00.000Z');
   assert.equal(event.payload.request.method, 'GET');
+  assert.equal(event.payload.request.url, '/orders?token=[REDACTED]');
   assert.equal(event.payload.request.route, '/orders');
   assert.equal(event.payload.request.headers.authorization, '[REDACTED]');
   assert.equal(event.payload.request.query.token, '[REDACTED]');

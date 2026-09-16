@@ -1,55 +1,68 @@
 import {
+  createErrorEvent,
   createRequestCompletedEvent,
   createRequestStartedEvent,
-  type TraceEventLike,
-  type TraceHttpRequestMetadata,
-  type TraceMetadata
+  errorFromUnknown,
+  type TraceCapturePolicy,
+  type TraceoEventSink
 } from '@traceo/core';
 
 export interface TraceoExpressOptions {
-  sink: {
-    capture(event: TraceEventLike): Promise<void>;
-  };
+  sink: TraceoEventSink;
   captureHeaders?: boolean;
+  captureCookies?: boolean;
+  captureQuery?: boolean;
+  captureRequestBody?: boolean;
   captureResponseBody?: boolean;
+  maxBodyBytes?: number;
+  maskKeys?: string[];
 }
 
-interface TraceoRequestLike {
+export interface TraceoRequestLike {
   method?: string;
   url?: string;
   originalUrl?: string;
   headers?: Record<string, unknown>;
   query?: Record<string, unknown>;
   cookies?: Record<string, unknown>;
+  body?: unknown;
   ip?: string;
   traceoRequestId?: string;
   traceoTraceId?: string;
   route?: { path?: unknown };
 }
 
-interface TraceoResponseLike {
+export interface TraceoResponseLike {
   statusCode?: number;
   send?: (body: unknown) => unknown;
   getHeaders?: () => Record<string, unknown>;
-  on(event: 'finish', listener: () => void): unknown;
+  on(event: 'finish' | 'error', listener: (...args: unknown[]) => void): unknown;
 }
 
-function normalizeMetadata(metadata: Record<string, unknown> | undefined): TraceMetadata {
-  const normalized: TraceMetadata = {};
+export type TraceoNextFunction = (error?: unknown) => void;
 
-  for (const [key, value] of Object.entries(metadata ?? {})) {
-    if (value === undefined) continue;
-    const normalizedKey = key.toLowerCase();
-    if (Array.isArray(value)) {
-      normalized[normalizedKey] = value.map((item) => String(item));
-    } else if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      normalized[normalizedKey] = value;
-    } else {
-      normalized[normalizedKey] = String(value);
-    }
-  }
+interface CollectedRequest {
+  method: string;
+  url: string;
+  route?: string;
+  headers?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  cookies?: Record<string, unknown>;
+  ip?: string;
+  userAgent?: string;
+  body?: unknown;
+}
 
-  return normalized;
+function capturePolicy(options: TraceoExpressOptions): TraceCapturePolicy {
+  return {
+    additionalMaskKeys: options.maskKeys,
+    maxBodyBytes: options.maxBodyBytes
+  };
+}
+
+function headerValue(headers: Record<string, unknown> | undefined, name: string): string | undefined {
+  const value = headers?.[name] ?? headers?.[name.toLowerCase()];
+  return typeof value === 'string' ? value : undefined;
 }
 
 function getRoute(req: TraceoRequestLike): string | undefined {
@@ -60,46 +73,44 @@ function getRoute(req: TraceoRequestLike): string | undefined {
   return undefined;
 }
 
-function getRequestMetadata(req: TraceoRequestLike, captureHeaders: boolean | undefined): TraceHttpRequestMetadata {
-  const headers = normalizeMetadata(captureHeaders ? req.headers : undefined);
-  const userAgent = typeof headers['user-agent'] === 'string' ? headers['user-agent'] : undefined;
+function getRequestMetadata(req: TraceoRequestLike, options: TraceoExpressOptions): CollectedRequest {
+  const userAgent = headerValue(req.headers, 'user-agent');
 
   return {
     method: req.method ?? 'UNKNOWN',
     url: req.originalUrl ?? req.url ?? 'unknown',
     route: getRoute(req),
-    headers,
-    query: normalizeMetadata(req.query),
-    cookies: normalizeMetadata(req.cookies),
+    headers: options.captureHeaders ? req.headers : undefined,
+    query: options.captureQuery === false ? undefined : req.query,
+    cookies: options.captureCookies ? req.cookies : undefined,
     ...(req.ip !== undefined ? { ip: req.ip } : {}),
-    ...(userAgent !== undefined ? { userAgent } : {})
+    ...(userAgent !== undefined ? { userAgent } : {}),
+    ...(options.captureRequestBody ? { body: req.body } : {})
   };
 }
 
-function estimatePayloadSize(body: unknown): number | undefined {
-  if (body === undefined || body === null) {
-    return undefined;
-  }
-
-  if (typeof body === 'string') {
-    return body.length;
-  }
-
-  if (body instanceof Uint8Array) {
-    return body.byteLength;
-  }
-
-  return JSON.stringify(body).length;
+function captureRequestError(options: TraceoExpressOptions, req: TraceoRequestLike, error: unknown, statusCode?: number): void {
+  const details = errorFromUnknown(error);
+  void options.sink.capture(createErrorEvent({
+    ...details,
+    requestId: req.traceoRequestId,
+    traceId: req.traceoTraceId,
+    statusCode,
+    method: req.method,
+    url: req.originalUrl ?? req.url
+  }));
 }
 
 export function createTraceoMiddleware(options: TraceoExpressOptions) {
-  return (req: TraceoRequestLike, res: TraceoResponseLike, next: () => void) => {
+  const policy = capturePolicy(options);
+
+  return (req: TraceoRequestLike, res: TraceoResponseLike, next: TraceoNextFunction) => {
     const startedAt = Date.now();
     const startedEvent = createRequestStartedEvent({
-      ...getRequestMetadata(req, options.captureHeaders),
+      ...getRequestMetadata(req, options),
       requestId: req.traceoRequestId,
       traceId: req.traceoTraceId
-    });
+    }, policy);
 
     req.traceoRequestId = startedEvent.payload.requestId;
     req.traceoTraceId = startedEvent.payload.traceId;
@@ -115,27 +126,38 @@ export function createTraceoMiddleware(options: TraceoExpressOptions) {
 
     void options.sink.capture(startedEvent);
 
+    res.on('error', (error) => {
+      captureRequestError(options, req, error, res.statusCode);
+    });
+
     res.on('finish', () => {
       const completedAt = new Date();
       const durationMs = Date.now() - startedAt;
-      const request = getRequestMetadata(req, options.captureHeaders);
       const completedEvent = createRequestCompletedEvent({
         traceId: startedEvent.payload.traceId,
         requestId: startedEvent.payload.requestId,
-        request,
+        request: getRequestMetadata(req, options),
         response: {
           statusCode: res.statusCode ?? 0,
-          headers: normalizeMetadata(options.captureHeaders && typeof res.getHeaders === 'function' ? res.getHeaders() : undefined),
+          headers: options.captureHeaders && typeof res.getHeaders === 'function' ? res.getHeaders() : undefined,
           durationMs: Number(durationMs.toFixed(3)),
           completedAt,
-          payloadSizeBytes: options.captureResponseBody ? estimatePayloadSize(responseBody) : undefined
+          body: options.captureResponseBody ? responseBody : undefined
         },
         timestamp: completedAt
-      });
+      }, policy);
 
+      responseBody = undefined;
       void options.sink.capture(completedEvent);
     });
 
     next();
+  };
+}
+
+export function createTraceoErrorHandler(options: TraceoExpressOptions) {
+  return (error: unknown, req: TraceoRequestLike, res: TraceoResponseLike, next: TraceoNextFunction) => {
+    captureRequestError(options, req, error, res.statusCode && res.statusCode >= 400 ? res.statusCode : 500);
+    next(error);
   };
 }

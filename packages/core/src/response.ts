@@ -1,4 +1,5 @@
-import { createRequestCompletedEvent, sanitizeMetadata } from './http';
+import { createRequestCompletedEvent } from './http';
+import type { TraceCapturePolicy } from './redaction';
 
 export interface TraceResponseContext {
   requestId: string;
@@ -14,7 +15,7 @@ export interface TraceResponseContext {
   timestamp?: string;
 }
 
-export function createResponseEvent(context: TraceResponseContext) {
+export function createResponseEvent(context: TraceResponseContext, policy: TraceCapturePolicy = {}) {
   return createRequestCompletedEvent({
     traceId: context.traceId ?? context.requestId,
     requestId: context.requestId,
@@ -25,11 +26,12 @@ export function createResponseEvent(context: TraceResponseContext) {
     },
     response: {
       statusCode: context.statusCode,
-      headers: sanitizeMetadata(context.headers),
+      headers: context.headers,
       durationMs: context.durationMs ?? 0,
       completedAt: context.timestamp,
-      payloadSizeBytes: context.payloadSizeBytes
+      payloadSizeBytes: context.payloadSizeBytes,
+      body: context.body
     },
     timestamp: context.timestamp
-  });
+  }, policy);
 }

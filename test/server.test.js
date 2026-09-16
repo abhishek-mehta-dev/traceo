@@ -11,7 +11,7 @@ let serverPort = 3031;
 test.before(() => {
   const dataFile = path.join(__dirname, 'tmp-server-events.json');
   fs.writeFileSync(dataFile, JSON.stringify([{ id: '1', type: 'request', timestamp: '2026-01-01T00:00:00.000Z', source: 'express', payload: { requestId: 'req-123', method: 'GET', url: '/orders', statusCode: 200 } }]));
-  serverProcess = spawn(process.execPath, [path.resolve(__dirname, '../packages/server/dist/index.js')], {
+  serverProcess = spawn(process.execPath, [path.resolve(__dirname, '../packages/server/dist/start.js')], {
     cwd: path.resolve(__dirname, '..'),
     env: { ...process.env, PORT: String(serverPort), TRACEO_DATA_FILE: dataFile },
     stdio: ['ignore', 'pipe', 'pipe']

@@ -1,7 +1,13 @@
-export type TraceHttpEventType = 'REQUEST_STARTED' | 'REQUEST_COMPLETED';
+import {
+  redactCookieMetadata,
+  sanitizeMetadata,
+  sanitizeUrl,
+  summarizeCapturedBody,
+  type TraceCapturePolicy,
+  type TraceMetadata
+} from './redaction';
 
-export type TraceMetadataValue = string | number | boolean | null | string[];
-export type TraceMetadata = Record<string, TraceMetadataValue>;
+export type TraceHttpEventType = 'REQUEST_STARTED' | 'REQUEST_COMPLETED';
 
 export interface TraceHttpRequestMetadata {
   method: string;
@@ -12,6 +18,9 @@ export interface TraceHttpRequestMetadata {
   cookies?: TraceMetadata;
   ip?: string;
   userAgent?: string;
+  payloadSizeBytes?: number;
+  body?: string;
+  bodyTruncated?: boolean;
 }
 
 export interface TraceHttpResponseMetadata {
@@ -20,6 +29,8 @@ export interface TraceHttpResponseMetadata {
   durationMs: number;
   completedAt: string;
   payloadSizeBytes?: number;
+  body?: string;
+  bodyTruncated?: boolean;
 }
 
 export interface TraceHttpEventPayload {
@@ -38,7 +49,16 @@ export interface TraceHttpEvent {
   payload: TraceHttpEventPayload;
 }
 
-export interface CreateRequestStartedEventContext extends TraceHttpRequestMetadata {
+export interface CreateRequestStartedEventContext {
+  method: string;
+  url: string;
+  route?: string;
+  headers?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  cookies?: Record<string, unknown>;
+  ip?: string;
+  userAgent?: string;
+  body?: unknown;
   traceId?: string;
   requestId?: string;
   timestamp?: string | Date;
@@ -47,13 +67,21 @@ export interface CreateRequestStartedEventContext extends TraceHttpRequestMetada
 export interface CreateRequestCompletedEventContext {
   traceId: string;
   requestId: string;
-  request: TraceHttpRequestMetadata;
-  response: Omit<TraceHttpResponseMetadata, 'completedAt'> & { completedAt?: string | Date };
+  request: Omit<CreateRequestStartedEventContext, 'traceId' | 'requestId' | 'timestamp' | 'body'> & {
+    method: string;
+    url: string;
+    body?: unknown;
+  };
+  response: {
+    statusCode: number;
+    headers?: Record<string, unknown>;
+    durationMs: number;
+    completedAt?: string | Date;
+    payloadSizeBytes?: number;
+    body?: unknown;
+  };
   timestamp?: string | Date;
 }
-
-const SENSITIVE_KEY_PATTERN = /(authorization|password|token|cookie|secret)/i;
-const REDACTED = '[REDACTED]';
 
 function createIdentifier(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -84,53 +112,39 @@ function requireNonEmpty(value: string | undefined, field: string): string {
   return value;
 }
 
-function normalizeMetadataValue(value: unknown): TraceMetadataValue | undefined {
-  if (value === undefined) return undefined;
-  if (value === null) return null;
-  if (Array.isArray(value)) return value.map((item) => String(item));
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
-  return String(value);
+function bodyFields(summary: { payloadSizeBytes: number; body?: string; bodyTruncated: boolean }): Pick<TraceHttpRequestMetadata, 'payloadSizeBytes' | 'body' | 'bodyTruncated'> {
+  return {
+    ...(summary.body !== undefined || summary.payloadSizeBytes > 0 ? { payloadSizeBytes: summary.payloadSizeBytes } : {}),
+    ...(summary.body !== undefined ? { body: summary.body } : {}),
+    ...(summary.bodyTruncated ? { bodyTruncated: true } : {})
+  };
 }
 
-export function sanitizeMetadata(metadata: Record<string, unknown> | undefined): TraceMetadata {
-  const sanitized: TraceMetadata = {};
-
-  for (const [key, value] of Object.entries(metadata ?? {})) {
-    const normalizedKey = key.toLowerCase();
-    const normalizedValue = SENSITIVE_KEY_PATTERN.test(normalizedKey) ? REDACTED : normalizeMetadataValue(value);
-    if (normalizedValue !== undefined) {
-      sanitized[normalizedKey] = normalizedValue;
-    }
-  }
-
-  return sanitized;
-}
-
-function redactMetadata(metadata: Record<string, unknown> | undefined): TraceMetadata {
-  const redacted: TraceMetadata = {};
-  for (const key of Object.keys(metadata ?? {})) {
-    redacted[key.toLowerCase()] = REDACTED;
-  }
-  return redacted;
-}
-
-function normalizeRequest(context: TraceHttpRequestMetadata): TraceHttpRequestMetadata {
+function normalizeRequest(
+  context: Pick<CreateRequestStartedEventContext, 'method' | 'url' | 'route' | 'headers' | 'query' | 'cookies' | 'ip' | 'userAgent' | 'body'>,
+  policy: TraceCapturePolicy = {}
+): TraceHttpRequestMetadata {
   const method = requireNonEmpty(context.method, 'method').toUpperCase();
-  const url = requireNonEmpty(context.url, 'url');
+  const url = sanitizeUrl(requireNonEmpty(context.url, 'url'), policy);
+  const body = context.body === undefined ? undefined : summarizeCapturedBody(context.body, policy);
 
   return {
     method,
     url,
     ...(context.route !== undefined ? { route: context.route } : {}),
-    headers: sanitizeMetadata(context.headers),
-    query: sanitizeMetadata(context.query),
-    cookies: redactMetadata(context.cookies),
+    ...(context.headers !== undefined ? { headers: sanitizeMetadata(context.headers, policy) } : {}),
+    ...(context.query !== undefined ? { query: sanitizeMetadata(context.query, policy) } : {}),
+    ...(context.cookies !== undefined ? { cookies: redactCookieMetadata(context.cookies) } : {}),
     ...(context.ip !== undefined ? { ip: context.ip } : {}),
-    ...(context.userAgent !== undefined ? { userAgent: context.userAgent } : {})
+    ...(context.userAgent !== undefined ? { userAgent: context.userAgent } : {}),
+    ...(body === undefined ? {} : bodyFields(body))
   };
 }
 
-export function createRequestStartedEvent(context: CreateRequestStartedEventContext): TraceHttpEvent {
+export function createRequestStartedEvent(
+  context: CreateRequestStartedEventContext,
+  policy: TraceCapturePolicy = {}
+): TraceHttpEvent {
   const traceId = context.traceId ?? createIdentifier('trace');
   const requestId = context.requestId ?? traceId;
 
@@ -142,18 +156,26 @@ export function createRequestStartedEvent(context: CreateRequestStartedEventCont
     payload: {
       traceId,
       requestId,
-      request: normalizeRequest(context)
+      request: normalizeRequest(context, policy)
     }
   };
 }
 
-export function createRequestCompletedEvent(context: CreateRequestCompletedEventContext): TraceHttpEvent {
+export function createRequestCompletedEvent(
+  context: CreateRequestCompletedEventContext,
+  policy: TraceCapturePolicy = {}
+): TraceHttpEvent {
   requireNonEmpty(context.traceId, 'traceId');
   requireNonEmpty(context.requestId, 'requestId');
 
   if (!Number.isFinite(context.response.durationMs) || context.response.durationMs < 0) {
     throw new Error('response.durationMs must be a non-negative number');
   }
+
+  const responseBody = context.response.body === undefined
+    ? undefined
+    : summarizeCapturedBody(context.response.body, policy);
+  const payloadSizeBytes = context.response.payloadSizeBytes ?? responseBody?.payloadSizeBytes;
 
   return {
     id: createIdentifier('evt'),
@@ -163,13 +185,15 @@ export function createRequestCompletedEvent(context: CreateRequestCompletedEvent
     payload: {
       traceId: context.traceId,
       requestId: context.requestId,
-      request: normalizeRequest(context.request),
+      request: normalizeRequest(context.request, policy),
       response: {
         statusCode: context.response.statusCode,
-        headers: sanitizeMetadata(context.response.headers),
+        ...(context.response.headers !== undefined ? { headers: sanitizeMetadata(context.response.headers, policy) } : {}),
         durationMs: context.response.durationMs,
         completedAt: normalizeTimestamp(context.response.completedAt),
-        ...(context.response.payloadSizeBytes !== undefined ? { payloadSizeBytes: context.response.payloadSizeBytes } : {})
+        ...(payloadSizeBytes !== undefined ? { payloadSizeBytes } : {}),
+        ...(responseBody?.body !== undefined ? { body: responseBody.body } : {}),
+        ...(responseBody?.bodyTruncated ? { bodyTruncated: true } : {})
       }
     }
   };

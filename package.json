@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc -b",
-    "test": "node --test test/*.test.js packages/express/src/*.test.js"
+    "test": "node --test test/*.test.js packages/express/src/*.test.js packages/nestjs/src/*.test.js",
+    "start": "pnpm --filter @traceo/example-express-basic start",
+    "example": "pnpm --filter @traceo/example-express-basic start"
   },
   "keywords": [],
   "author": "",

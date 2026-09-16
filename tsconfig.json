@@ -5,6 +5,7 @@
     { "path": "./packages/shared" },
     { "path": "./packages/storage" },
     { "path": "./packages/express" },
+    { "path": "./packages/nestjs" },
     { "path": "./packages/cli" },
     { "path": "./packages/server" }
   ]

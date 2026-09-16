@@ -1,63 +1,54 @@
-import { createServer, IncomingMessage, ServerResponse } from 'node:http';
-import { FileTraceStore, type TraceEventQuery } from '@traceo/storage';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { createTraceoStoreFromEnv } from '@traceo/storage';
+import { createTraceoServer, type TraceoBasicAuth, type TraceoServerOptions } from './create-server';
 
-const dataFile = process.env.TRACEO_DATA_FILE ?? join(homedir(), '.traceo', 'events.json');
-const store = new FileTraceStore(dataFile);
+export {
+  createTraceoServer,
+  isDashboardEnabled,
+  resolveDashboardDir,
+  summarizeRequests,
+  filterRequestSummaries,
+  paginateRequestSummaries,
+  requestFacets,
+  type TraceoBasicAuth,
+  type TraceoServerOptions,
+  type TraceRequestSummary
+} from './create-server';
 
-function parseQuery(url: URL): TraceEventQuery {
-  const statusCode = url.searchParams.get('statusCode');
-  const limit = url.searchParams.get('limit');
-
+function resolveBasicAuth(): TraceoBasicAuth | undefined {
+  const value = process.env.TRACEO_BASIC_AUTH;
+  if (!value) {
+    return undefined;
+  }
+  const separator = value.indexOf(':');
+  if (separator === -1) {
+    return undefined;
+  }
   return {
-    type: url.searchParams.get('type') ?? undefined,
-    requestId: url.searchParams.get('requestId') ?? undefined,
-    method: url.searchParams.get('method') ?? undefined,
-    source: url.searchParams.get('source') ?? undefined,
-    from: url.searchParams.get('from') ?? undefined,
-    to: url.searchParams.get('to') ?? undefined,
-    search: url.searchParams.get('search') ?? undefined,
-    statusCode: statusCode === null ? undefined : Number(statusCode),
-    limit: limit === null ? undefined : Number(limit)
+    username: value.slice(0, separator),
+    password: value.slice(separator + 1)
   };
 }
 
-function sendJson(res: ServerResponse, statusCode: number, body: unknown): void {
-  res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(body));
+export function startTraceoServerFromEnv(): void {
+  const options: TraceoServerOptions = {
+    storage: createTraceoStoreFromEnv(),
+    basicAuth: resolveBasicAuth(),
+    apiKey: process.env.TRACEO_API_KEY || undefined
+  };
+
+  const server = createTraceoServer(options);
+  const port = Number(process.env.PORT ?? 3030);
+  const host = process.env.TRACEO_HOST ?? '127.0.0.1';
+
+  server.on('error', (error: NodeJS.ErrnoException) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Traceo server could not bind http://${host}:${port} because the address is already in use.`);
+      process.exit(1);
+    }
+    throw error;
+  });
+
+  server.listen(port, host, () => {
+    console.log(`Traceo server listening on http://${host}:${port}`);
+  });
 }
-
-const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-  if (!req.url) {
-    sendJson(res, 400, { error: 'Missing URL' });
-    return;
-  }
-
-  const url = new URL(req.url, 'http://localhost');
-
-  if (req.method === 'GET' && url.pathname === '/health') {
-    sendJson(res, 200, { status: 'ok' });
-    return;
-  }
-
-  if (req.method === 'GET' && url.pathname === '/events') {
-    const events = store.query(parseQuery(url));
-    sendJson(res, 200, { events, count: events.length });
-    return;
-  }
-
-  if (req.method === 'GET' && url.pathname.startsWith('/timeline/')) {
-    const requestId = url.pathname.split('/').pop();
-    const timeline = store.getTimeline(requestId ?? '');
-    sendJson(res, 200, { requestId, timeline });
-    return;
-  }
-
-  sendJson(res, 404, { error: 'Not found' });
-});
-
-const port = Number(process.env.PORT ?? 3030);
-server.listen(port, () => {
-  console.log(`Traceo server listening on http://localhost:${port}`);
-});

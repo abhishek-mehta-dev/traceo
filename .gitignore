@@ -39,3 +39,5 @@ Thumbs.db
 .tmp/
 .tmp
 *.tmp
+*.sqlite
+*.sqlite-journal

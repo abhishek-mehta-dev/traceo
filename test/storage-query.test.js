@@ -23,7 +23,7 @@ test('returns correlated events for a request id', async () => {
     payload: { requestId: 'req-123', message: 'boom' }
   });
 
-  const timeline = store.getTimeline('req-123');
+  const timeline = await store.getTimeline('req-123');
 
   assert.equal(timeline.length, 2);
   assert.equal(timeline[0].type, 'request');

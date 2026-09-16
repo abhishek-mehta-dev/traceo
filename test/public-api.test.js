@@ -25,7 +25,7 @@ test('exposes a public timeline query through the core package', async () => {
   await core.capture(requestEvent);
   await core.capture(errorEvent);
 
-  const timeline = store.getTimeline(requestEvent.payload.requestId);
+  const timeline = await store.getTimeline(requestEvent.payload.requestId);
 
   assert.equal(timeline.length, 2);
   assert.equal(timeline[0].type, 'REQUEST_STARTED');

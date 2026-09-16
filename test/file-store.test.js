@@ -20,7 +20,7 @@ test('persists and retrieves events from disk', async () => {
     payload: { requestId: 'req-123', method: 'GET', url: '/health' }
   });
 
-  const timeline = store.getTimeline('req-123');
+  const timeline = await store.getTimeline('req-123');
   assert.equal(timeline.length, 1);
   assert.equal(timeline[0].payload.requestId, 'req-123');
 });

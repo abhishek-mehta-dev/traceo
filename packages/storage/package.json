@@ -6,8 +6,5 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -b"
-  },
-  "dependencies": {
-    "@traceo/core": "workspace:*"
   }
 }

@@ -1,22 +1,5 @@
-export interface TraceEventLike {
-  id: string;
-  type: string;
-  timestamp: string;
-  source: string;
-  payload: Record<string, unknown>;
-}
-
-export interface TraceEventQuery {
-  type?: string;
-  requestId?: string;
-  method?: string;
-  statusCode?: number;
-  source?: string;
-  from?: string;
-  to?: string;
-  search?: string;
-  limit?: number;
-}
+import { eventCorrelationId, toIsoTimestamp } from './internal';
+import type { TraceEventLike, TraceEventQuery } from './types';
 
 function normalizeSearchValue(value: unknown): string {
   if (value === undefined || value === null) return '';
@@ -26,19 +9,19 @@ function normalizeSearchValue(value: unknown): string {
 
 function timestampIsWithinRange(timestamp: string, query: TraceEventQuery): boolean {
   const eventTime = Date.parse(timestamp);
-  if (query.from !== undefined && eventTime < Date.parse(query.from)) return false;
-  if (query.to !== undefined && eventTime > Date.parse(query.to)) return false;
+  if (query.from !== undefined && eventTime < Date.parse(toIsoTimestamp(query.from))) return false;
+  if (query.to !== undefined && eventTime > Date.parse(toIsoTimestamp(query.to))) return false;
   return true;
 }
 
 export function queryTraceEvents(events: TraceEventLike[], query: TraceEventQuery = {}): TraceEventLike[] {
   const search = query.search?.toLowerCase().trim();
   const filtered = events.filter((event) => {
-    const payload = event.payload as Record<string, unknown>;
+    const payload = event.payload;
     if (query.type !== undefined && event.type !== query.type) return false;
     if (query.source !== undefined && event.source !== query.source) return false;
-    const httpPayload = payload as { requestId?: unknown; request?: { method?: unknown }; response?: { statusCode?: unknown } };
-    const requestId = httpPayload.requestId ?? (payload as { traceId?: unknown }).traceId;
+    const httpPayload = payload as { request?: { method?: unknown }; response?: { statusCode?: unknown } };
+    const requestId = eventCorrelationId(event);
     const method = payload.method ?? httpPayload.request?.method;
     const statusCode = payload.statusCode ?? httpPayload.response?.statusCode;
     if (query.requestId !== undefined && requestId !== query.requestId) return false;
@@ -54,3 +37,11 @@ export function queryTraceEvents(events: TraceEventLike[], query: TraceEventQuer
   const sorted = filtered.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   return query.limit !== undefined ? sorted.slice(0, query.limit) : sorted;
 }
+
+export function timelineForRequestId(events: TraceEventLike[], requestId: string): TraceEventLike[] {
+  return events
+    .filter((event) => eventCorrelationId(event) === requestId)
+    .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+}
+
+export type { TraceEventLike, TraceEventQuery } from './types';

@@ -19,8 +19,8 @@ test('captures response events with timing and payload metadata', async () => {
     timestamp: '2026-01-01T00:00:01.000Z'
   }));
 
-  const responses = store.listByType('REQUEST_COMPLETED');
-  const timeline = store.getTimeline('req-123');
+  const responses = await store.listByType('REQUEST_COMPLETED');
+  const timeline = await store.getTimeline('req-123');
 
   assert.equal(responses.length, 1);
   assert.equal(responses[0].payload.response.statusCode, 201);

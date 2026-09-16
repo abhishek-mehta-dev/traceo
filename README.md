@@ -1,41 +1,55 @@
 # Traceo
 
-Traceo is an open-source developer observability platform for Node.js applications. It helps teams inspect requests, responses, errors, database activity, authentication events, and runtime behavior from a self-hosted web dashboard without relying on SSH access or expensive third-party observability tools.
+Traceo is a self-hosted Node.js observability toolkit. It captures HTTP requests, responses, and errors, stores them locally, and lets you inspect timelines from a localhost dashboard.
 
-## What is Traceo?
-Traceo is a lightweight, developer-first debugging and observability toolkit for Node.js. It is designed to make backend inspection simple by bringing request-level insights into one place.
+## Current vertical slice
 
-## Why does it exist?
-Debugging modern Node.js applications often means stitching together logs, terminal output, and cloud dashboards. Traceo exists to give developers a unified, self-hosted way to understand what is happening inside their applications in real time.
+- Express and NestJS adapters
+- Canonical `REQUEST_STARTED`, `REQUEST_COMPLETED`, and `error` events
+- Storage contract with memory, JSON file, and SQLite adapters
+- Local dashboard for request list and timeline detail
+- Optional basic auth / API key; dashboard off in production by default
+- Secrets redacted before persist; bodies opt-in and size-limited
 
-## Features
-- Request and response monitoring
-- Error tracking with stack context
-- Database query inspection
-- External API monitoring
-- Authentication event visibility
-- Framework integrations for Express and NestJS
-- Extensible plugin and storage architecture
-- A web dashboard for local and production debugging
-
-## Installation
-Install the core package with:
+## Quick start
 
 ```bash
-npm install traceo
+pnpm install
+pnpm build
+pnpm start
 ```
 
-For framework-specific setup, install the relevant adapter such as:
+Then open [http://127.0.0.1:3030/](http://127.0.0.1:3030/) and hit [http://127.0.0.1:3000/orders](http://127.0.0.1:3000/orders).
+
+## Packages
+
+| Package | Role |
+| --- | --- |
+| `@traceo/core` | Event factories, redaction, capture sink |
+| `@traceo/express` | Express middleware and error handler |
+| `@traceo/nestjs` | NestJS middleware and exception filter |
+| `@traceo/storage` | `TraceoStorage` plus memory, JSON, and SQLite stores |
+| `@traceo/server` | HTTP API and dashboard |
+| `@traceo/cli` | `timeline` and `events` commands |
+
+## Storage
+
+SQLite is the default engine (`~/.traceo/events.sqlite`). JSON remains available:
 
 ```bash
-npm install @traceo/express
+TRACEO_STORAGE=json TRACEO_DATA_FILE=~/.traceo/events.json
+TRACEO_STORAGE=sqlite TRACEO_SQLITE_FILE=~/.traceo/events.sqlite
 ```
 
-## Roadmap
-Traceo is currently in its initial milestone focused on project setup, documentation, and repository structure. Upcoming milestones will introduce core packages, framework integrations, CLI tooling, and richer dashboard experiences.
+## Server security
 
-## Contributing
-Contributions are welcome. If you would like to help shape Traceo, start by reviewing the documentation, opening an issue, or proposing a feature. The project is intended to grow through community feedback and collaborative development.
+The server binds to `127.0.0.1` by default. In `NODE_ENV=production` the dashboard is disabled unless `TRACEO_DASHBOARD=1`. Optional credentials:
+
+```bash
+TRACEO_BASIC_AUTH=user:password
+TRACEO_API_KEY=your-key
+TRACEO_HOST=127.0.0.1
+```
 
 ## License
 Traceo is licensed under the MIT License.

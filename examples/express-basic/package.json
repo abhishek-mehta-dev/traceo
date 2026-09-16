@@ -1,0 +1,14 @@
+{
+  "name": "@traceo/example-express-basic",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@traceo/express": "workspace:*",
+    "@traceo/server": "workspace:*",
+    "@traceo/storage": "workspace:*",
+    "express": "^5.1.0"
+  }
+}

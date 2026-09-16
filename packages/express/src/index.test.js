@@ -33,5 +33,7 @@ test('express middleware captures correlated request and response events', async
   assert.equal(captured[0].payload.request.url, '/users');
   assert.equal(captured[1].payload.response.statusCode, 202);
   assert.equal(captured[1].payload.response.payloadSizeBytes, 11);
+  assert.equal(captured[1].payload.response.body, '{"ok":true}');
+  assert.equal(captured[1].payload.response.bodyTruncated, undefined);
   assert.ok(captured[1].payload.response.durationMs >= 0);
 });

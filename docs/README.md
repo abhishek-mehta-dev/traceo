@@ -10,6 +10,7 @@ This folder contains the core product and engineering documentation for Traceo.
 - [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md)
 - [ARCHITECTURE](architecture/folder-structure.md)
 - [Software Architecture Document](ARCHITECTURE.md)
+- [Storage Architecture](architecture/STORAGE_ARCHITECTURE.md)
 - [Low Level Design](LLD.md)
 - [Repository Structure](REPOSITORY_STRUCTURE.md)
 - [Development Standards](DEVELOPMENT_STANDARDS.md)

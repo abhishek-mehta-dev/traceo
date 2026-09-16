@@ -23,8 +23,8 @@ test('captures error events and correlates them by request id', async () => {
     timestamp: '2026-01-01T00:00:01.000Z'
   });
 
-  const errors = store.listByType('error');
-  const correlated = store.listByRequestId('req-123');
+  const errors = await store.listByType('error');
+  const correlated = await store.listByRequestId('req-123');
 
   assert.equal(errors.length, 1);
   assert.equal(errors[0].payload.message, 'database unavailable');
