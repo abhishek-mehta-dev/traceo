@@ -1,19 +1,37 @@
 # NestJS example
 
-Use `@traceo/nestjs` the same way as Express, because Nest's default HTTP adapter is Express-compatible.
+Use `@traceo/nestjs` the same way as Express — Nest's default HTTP adapter is Express-compatible.
 
-```js
-const { NestFactory } = require('@nestjs/core');
-const { createTraceoExceptionFilter, createTraceoNestMiddleware } = require('@traceo/nestjs');
-const { SqliteTraceStore } = require('@traceo/storage');
+```ts
+import { NestFactory } from '@nestjs/core';
+import { attachTraceo } from '@traceo/nestjs';
+import { AppModule } from './app.module';
 
-async function bootstrap(AppModule) {
-  const store = new SqliteTraceStore();
+async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.use(createTraceoNestMiddleware({ sink: store }));
-  app.useGlobalFilters({ catch: createTraceoExceptionFilter({ sink: store }).catch.bind(createTraceoExceptionFilter({ sink: store })) });
-  await app.listen(3000, '127.0.0.1');
+
+  const traceo = attachTraceo(app);
+  if (traceo.enabled) {
+    app.useGlobalFilters(traceo.exceptionFilter);
+  }
+
+  await app.listen(3000);
 }
+bootstrap();
 ```
 
-The package does not depend on `@nestjs/core`. Install Nest in the application, then pass the Traceo store as the sink.
+```bash
+npm install @traceo/nestjs
+```
+
+Env (same as Express):
+
+```bash
+TRACEO_ENABLED=true
+TRACEO_DASHBOARD=1              # required in production
+TRACEO_PATH=/traceo
+TRACEO_BASIC_AUTH=user:password
+TRACEO_SQLITE_FILE=./traceo.sqlite
+```
+
+Then open `http://localhost:3000/traceo/`.

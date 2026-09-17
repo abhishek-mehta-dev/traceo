@@ -44,16 +44,43 @@ app.use((err, _req, res, _next) => {
 app.listen(8000);
 ```
 
-`.env` (local and production):
+## Use in any NestJS app (same minimal setup)
+
+Nest’s default HTTP adapter is Express-compatible, so Traceo mounts the same way:
+
+```ts
+import { NestFactory } from '@nestjs/core';
+import { attachTraceo } from '@traceo/nestjs';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const traceo = attachTraceo(app); // on when TRACEO_ENABLED=true
+  if (traceo.enabled) {
+    app.useGlobalFilters(traceo.exceptionFilter);
+  }
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+```bash
+npm install @traceo/nestjs
+```
+
+`.env` (local and production — same for Express and NestJS):
 
 ```bash
 TRACEO_ENABLED=true
+TRACEO_DASHBOARD=1              # required in production to serve the UI
 TRACEO_PATH=/traceo
 TRACEO_SQLITE_FILE=./traceo.sqlite
 TRACEO_BASIC_AUTH=user:password   # recommended in production
 ```
 
-- Local: `http://localhost:8000/traceo/`
+- Local: `http://localhost:3000/traceo/` (or your app port)
 - Production nginx:
 
 ```nginx
@@ -65,19 +92,6 @@ location /traceo/ {
 ```
 
 Then: `https://xyz.com/traceo/`
-
-Until packages are on npm, install from the Traceo repo:
-
-```bash
-npm install \
-  file:../Learning/traceo/packages/express \
-  file:../Learning/traceo/packages/server \
-  file:../Learning/traceo/packages/storage \
-  file:../Learning/traceo/packages/core \
-  file:../Learning/traceo/packages/shared
-```
-
-Run `pnpm build` in the Traceo repo first so `dist/` and dashboard assets exist.
 
 ## Packages
 

@@ -4,6 +4,7 @@ const path = require('node:path');
 const { EventEmitter } = require('node:events');
 
 const {
+  attachTraceo,
   createTraceoExceptionFilter,
   createTraceoNestMiddleware
 } = require(path.resolve(__dirname, '../dist/index.js'));
@@ -43,4 +44,36 @@ test('NestJS exception filter captures request-correlated errors', async () => {
   assert.equal(timeline[0].type, 'error');
   assert.equal(timeline[0].payload.message, 'nestjs boom');
   assert.equal(timeline[0].payload.requestId, 'req-nest');
+});
+
+test('attachTraceo wires Nest app via underlying Express instance', () => {
+  const uses = [];
+  const expressApp = {
+    use(...args) {
+      uses.push(args);
+    }
+  };
+  const nestApp = {
+    use(...args) {
+      uses.push(args);
+    },
+    getHttpAdapter() {
+      return { getInstance: () => expressApp };
+    }
+  };
+
+  const prev = process.env.TRACEO_ENABLED;
+  process.env.TRACEO_ENABLED = 'true';
+  try {
+    const attachment = attachTraceo(nestApp, {
+      storage: new InMemoryTraceStore(),
+      dashboard: false
+    });
+    assert.equal(attachment.enabled, true);
+    assert.equal(typeof attachment.exceptionFilter.catch, 'function');
+    assert.ok(uses.length >= 1);
+  } finally {
+    if (prev === undefined) delete process.env.TRACEO_ENABLED;
+    else process.env.TRACEO_ENABLED = prev;
+  }
 });
