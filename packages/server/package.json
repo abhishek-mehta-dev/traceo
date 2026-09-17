@@ -1,19 +1,45 @@
 {
   "name": "@traceo/server",
   "version": "0.1.0",
+  "description": "Traceo HTTP API and Ledger dashboard server",
+  "license": "MIT",
+  "author": "Abhishek Mehta",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhishek-mehta-dev/traceo.git",
+    "directory": "packages/server"
+  },
+  "homepage": "https://github.com/abhishek-mehta-dev/traceo#readme",
+  "bugs": {
+    "url": "https://github.com/abhishek-mehta-dev/traceo/issues"
+  },
+  "keywords": [
+    "traceo",
+    "observability",
+    "dashboard",
+    "api"
+  ],
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist",
     "public"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-dashboard.js",
+    "prepublishOnly": "pnpm run build",
     "start": "node dist/start.js"
   },
   "dependencies": {
-    "@traceo/storage": "file:../storage"
+    "@traceo/storage": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.13.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

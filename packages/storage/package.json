@@ -1,10 +1,30 @@
 {
   "name": "@traceo/storage",
   "version": "0.1.0",
-  "private": true,
+  "description": "Traceo storage adapters — memory, JSON file, and SQLite",
+  "license": "MIT",
+  "author": "Abhishek Mehta",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhishek-mehta-dev/traceo.git",
+    "directory": "packages/storage"
+  },
+  "homepage": "https://github.com/abhishek-mehta-dev/traceo#readme",
+  "bugs": {
+    "url": "https://github.com/abhishek-mehta-dev/traceo/issues"
+  },
+  "keywords": ["traceo", "observability", "sqlite", "storage"],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "prepublishOnly": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

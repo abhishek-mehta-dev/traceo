@@ -1,14 +1,45 @@
 {
   "name": "@traceo/cli",
-  "version": "1.0.0",
+  "version": "0.1.0",
+  "description": "Traceo CLI — inspect request timelines and events from the terminal",
+  "license": "MIT",
+  "author": "Abhishek Mehta",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhishek-mehta-dev/traceo.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/abhishek-mehta-dev/traceo#readme",
+  "bugs": {
+    "url": "https://github.com/abhishek-mehta-dev/traceo/issues"
+  },
+  "keywords": [
+    "traceo",
+    "cli",
+    "observability"
+  ],
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "traceo": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@traceo/storage": "file:../storage"
+    "@traceo/storage": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

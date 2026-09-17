@@ -1,19 +1,54 @@
 {
   "name": "@traceo/express",
   "version": "0.1.0",
-  "private": true,
+  "description": "Traceo Express middleware — capture requests and mount the Ledger dashboard",
+  "license": "MIT",
+  "author": "Abhishek Mehta",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhishek-mehta-dev/traceo.git",
+    "directory": "packages/express"
+  },
+  "homepage": "https://github.com/abhishek-mehta-dev/traceo#readme",
+  "bugs": {
+    "url": "https://github.com/abhishek-mehta-dev/traceo/issues"
+  },
+  "keywords": [
+    "traceo",
+    "express",
+    "observability",
+    "middleware",
+    "nodejs"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@traceo/core": "file:../core",
-    "@traceo/server": "file:../server",
-    "@traceo/shared": "file:../shared",
-    "@traceo/storage": "file:../storage"
+    "@traceo/core": "workspace:^",
+    "@traceo/server": "workspace:^",
+    "@traceo/storage": "workspace:^"
+  },
+  "peerDependencies": {
+    "express": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^24.13.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

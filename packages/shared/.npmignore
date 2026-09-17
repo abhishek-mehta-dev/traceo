@@ -1,0 +1,7 @@
+*.map
+*.tsbuildinfo
+**/*.map
+**/*.tsbuildinfo
+src/
+tsconfig.json
+*.test.js

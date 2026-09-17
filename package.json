@@ -1,27 +1,39 @@
 {
   "name": "traceo",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hosted Node.js observability toolkit — capture HTTP requests and inspect them in the Traceo Ledger dashboard",
+  "license": "MIT",
+  "author": "Abhishek Mehta",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhishek-mehta-dev/traceo.git"
+  },
+  "homepage": "https://github.com/abhishek-mehta-dev/traceo#readme",
+  "bugs": {
+    "url": "https://github.com/abhishek-mehta-dev/traceo/issues"
+  },
   "scripts": {
     "build": "tsc -b && node packages/server/scripts/copy-dashboard.js",
     "test": "node --test test/*.test.js packages/express/src/*.test.js packages/nestjs/src/*.test.js",
     "start": "pnpm --filter @traceo/example-express-basic start",
-    "example": "pnpm --filter @traceo/example-express-basic start"
+    "example": "pnpm --filter @traceo/example-express-basic start",
+    "pack:check": "pnpm build && pnpm -r --filter './packages/*' exec npm pack --dry-run",
+    "publish:packages": "pnpm build && pnpm -r --filter './packages/*' publish --access public --no-git-checks"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["traceo", "observability", "express", "nestjs"],
   "packageManager": "pnpm@10.32.1",
   "devDependencies": {
     "@types/node": "^24.13.3",
     "turbo": "^2.10.8",
     "typescript": "^7.0.2"
   },
-  "private": true,
   "workspaces": [
     "apps/*",
     "packages/*",
     "examples/*"
-  ]
+  ],
+  "engines": {
+    "node": ">=22"
+  }
 }

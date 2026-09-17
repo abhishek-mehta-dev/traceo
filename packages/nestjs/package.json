@@ -1,14 +1,54 @@
 {
   "name": "@traceo/nestjs",
   "version": "0.1.0",
-  "private": true,
+  "description": "Traceo NestJS adapter — attach capture and the Ledger dashboard with minimal boilerplate",
+  "license": "MIT",
+  "author": "Abhishek Mehta",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhishek-mehta-dev/traceo.git",
+    "directory": "packages/nestjs"
+  },
+  "homepage": "https://github.com/abhishek-mehta-dev/traceo#readme",
+  "bugs": {
+    "url": "https://github.com/abhishek-mehta-dev/traceo/issues"
+  },
+  "keywords": [
+    "traceo",
+    "nestjs",
+    "observability",
+    "middleware",
+    "nodejs"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@traceo/core": "file:../core",
-    "@traceo/express": "file:../express"
+    "@traceo/core": "workspace:^",
+    "@traceo/express": "workspace:^"
+  },
+  "peerDependencies": {
+    "@nestjs/common": ">=9",
+    "@nestjs/core": ">=9"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/common": {
+      "optional": true
+    },
+    "@nestjs/core": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

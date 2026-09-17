@@ -6,9 +6,9 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@traceo/express": "file:../../packages/express",
-    "@traceo/server": "file:../../packages/server",
-    "@traceo/storage": "file:../../packages/storage",
+    "@traceo/express": "workspace:^",
+    "@traceo/server": "workspace:^",
+    "@traceo/storage": "workspace:^",
     "express": "^5.1.0"
   }
 }

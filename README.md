@@ -11,7 +11,27 @@ Traceo is structured as a monorepo containing core libraries, framework adapters
 - **Server**: `@traceo/server` exposes a REST API (`/requests`, `/timeline/:requestId`) and serves the dashboard. It supports optional basic auth / API keys, and the dashboard is disabled in production by default.
 - **Dashboard ("Traceo — Ledger")**: A vanilla HTML/CSS/JS single-page application (`apps/dashboard`) with a warm, numbered log-book theme. It provides a split-pane view for request inspection and timeline detail.
 
-## Quick start
+## Requirements
+
+- **Node.js ≥ 22** (SQLite storage uses `node:sqlite`)
+
+## Install from npm (production)
+
+**Express:**
+
+```bash
+npm install @traceo/express
+```
+
+**NestJS:**
+
+```bash
+npm install @traceo/nestjs
+```
+
+Then call `attachTraceo` (see below) and set env vars. Full publish guide: [docs/PUBLISH.md](docs/PUBLISH.md).
+
+## Quick start (this monorepo)
 
 ```bash
 pnpm install
@@ -67,7 +87,8 @@ bootstrap();
 ```
 
 ```bash
-npm install @traceo/nestjs
+npm install @traceo/express   # Express
+npm install @traceo/nestjs    # NestJS
 ```
 
 `.env` (local and production — same for Express and NestJS):

@@ -41,3 +41,4 @@ Thumbs.db
 *.tmp
 *.sqlite
 *.sqlite-journal
+.tsbuildinfo
