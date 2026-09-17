@@ -1,5 +1,5 @@
 {
-  "name": "@traceo/core",
+  "name": "@traceojs/core",
   "version": "0.1.0",
   "description": "Traceo core event factories, redaction, and capture sink",
   "license": "MIT",

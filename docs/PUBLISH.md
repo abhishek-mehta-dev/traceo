@@ -4,20 +4,20 @@ Publishable packages (under `packages/`):
 
 | Package | Install for |
 | --- | --- |
-| `@traceo/express` | Express apps (pulls server, storage, core) |
-| `@traceo/nestjs` | NestJS apps (pulls express + core) |
-| `@traceo/cli` | Terminal timeline / events |
-| `@traceo/core` | Internal / advanced |
-| `@traceo/storage` | Internal / advanced |
-| `@traceo/server` | Internal / advanced |
-| `@traceo/shared` | Shared types |
+| `@traceojs/express` | Express apps (pulls server, storage, core) |
+| `@traceojs/nestjs` | NestJS apps (pulls express + core) |
+| `@traceojs/cli` | Terminal timeline / events |
+| `@traceojs/core` | Internal / advanced |
+| `@traceojs/storage` | Internal / advanced |
+| `@traceojs/server` | Internal / advanced |
+| `@traceojs/shared` | Shared types |
 
 Root and `examples/*` stay `"private": true`.
 
 ## Prerequisites
 
 1. Node.js **≥ 22** (SQLite uses `node:sqlite`)
-2. An npm account with access to the `@traceo` scope
+2. An npm account with access to the `@traceojs` scope
 3. Logged in: `npm login`
 4. Create the org if needed: https://www.npmjs.com/org/create
 
@@ -45,31 +45,31 @@ pnpm publish:packages    # publishes packages/* in dependency order
 ## Publish a single package
 
 ```bash
-pnpm --filter @traceo/core publish --access public --no-git-checks
+pnpm --filter @traceojs/core publish --access public --no-git-checks
 ```
 
 Publish order if doing it manually:
 
-1. `@traceo/shared`
-2. `@traceo/core`
-3. `@traceo/storage`
-4. `@traceo/server`
-5. `@traceo/express`
-6. `@traceo/nestjs`
-7. `@traceo/cli`
+1. `@traceojs/shared`
+2. `@traceojs/core`
+3. `@traceojs/storage`
+4. `@traceojs/server`
+5. `@traceojs/express`
+6. `@traceojs/nestjs`
+7. `@traceojs/cli`
 
 ## After publishing — use in production
 
 **Express:**
 
 ```bash
-npm install @traceo/express
+npm install @traceojs/express
 ```
 
 **NestJS:**
 
 ```bash
-npm install @traceo/nestjs
+npm install @traceojs/nestjs
 ```
 
 See the root [README](../README.md) for `attachTraceo` and env vars.

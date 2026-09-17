@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createTraceoStoreFromEnv } from '@traceo/storage';
+import { createTraceoStoreFromEnv } from '@traceojs/storage';
 import { runTraceoCli } from './run';
 
 export { runTraceoCli } from './run';

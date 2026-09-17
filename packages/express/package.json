@@ -1,5 +1,5 @@
 {
-  "name": "@traceo/express",
+  "name": "@traceojs/express",
   "version": "0.1.0",
   "description": "Traceo Express middleware — capture requests and mount the Ledger dashboard",
   "license": "MIT",
@@ -30,9 +30,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@traceo/core": "workspace:^",
-    "@traceo/server": "workspace:^",
-    "@traceo/storage": "workspace:^"
+    "@traceojs/core": "workspace:^",
+    "@traceojs/server": "workspace:^",
+    "@traceojs/storage": "workspace:^"
   },
   "peerDependencies": {
     "express": ">=4"

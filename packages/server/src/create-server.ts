@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
-import type { TraceEventLike, TraceEventQuery, TraceoStorage } from '@traceo/storage';
+import type { TraceEventLike, TraceEventQuery, TraceoStorage } from '@traceojs/storage';
 
 export interface TraceoBasicAuth {
   username: string;

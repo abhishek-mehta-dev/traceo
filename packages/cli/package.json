@@ -1,5 +1,5 @@
 {
-  "name": "@traceo/cli",
+  "name": "@traceojs/cli",
   "version": "0.1.0",
   "description": "Traceo CLI — inspect request timelines and events from the terminal",
   "license": "MIT",
@@ -31,7 +31,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@traceo/storage": "workspace:^"
+    "@traceojs/storage": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.2.0"

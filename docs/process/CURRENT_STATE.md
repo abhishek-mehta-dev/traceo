@@ -17,20 +17,20 @@ Top-level status:
 
 ```mermaid
 flowchart LR
-  App[Node.js application / tests] --> Express[@traceo/express middleware]
+  App[Node.js application / tests] --> Express[@traceojs/express middleware]
   Express -->|emits request/response events directly| Sink[TraceoEventSink]
-  App --> Core[@traceo/core]
+  App --> Core[@traceojs/core]
   Core -->|capture(event)| Sink
   Core -->|create request/response/error events| Event[TraceEventLike]
-  Sink --> Storage[@traceo/storage]
+  Sink --> Storage[@traceojs/storage]
   Storage --> File[(JSON file store)]
   Storage --> Memory[(In-memory store)]
-  Server[@traceo/server] --> Storage
-  CLI[@traceo/cli] --> Storage
+  Server[@traceojs/server] --> Storage
+  CLI[@traceojs/cli] --> Storage
   Dashboard[apps/dashboard] -. missing .-> Server
 ```
 
-The implemented flow is simpler than the planned event-bus architecture. `@traceo/core` provides event factories and a sink-forwarding class, while `@traceo/express` constructs request/response event objects itself rather than using the core factories. Storage is JSON-file/in-memory based, not SQLite.
+The implemented flow is simpler than the planned event-bus architecture. `@traceojs/core` provides event factories and a sink-forwarding class, while `@traceojs/express` constructs request/response event objects itself rather than using the core factories. Storage is JSON-file/in-memory based, not SQLite.
 
 ## 3. Dependency Graph
 
@@ -39,22 +39,22 @@ Manifest and source-import dependency graph:
 ```mermaid
 flowchart TD
   Root[traceo root]
-  CLI[@traceo/cli] --> Storage[@traceo/storage]
-  Server[@traceo/server] --> Storage
-  Storage --> Core[@traceo/core]
-  Express[@traceo/express] --> Core
-  Express --> Shared[@traceo/shared]
+  CLI[@traceojs/cli] --> Storage[@traceojs/storage]
+  Server[@traceojs/server] --> Storage
+  Storage --> Core[@traceojs/core]
+  Express[@traceojs/express] --> Core
+  Express --> Shared[@traceojs/shared]
   Core -->|source import ./error only| CoreInternal[core internal modules]
-  DashboardSDK[@traceo/dashboard-sdk] -. placeholder .- Root
-  NestJS[@traceo/nestjs] -. placeholder .- Root
-  Plugins[@traceo/plugins] -. placeholder .- Root
+  DashboardSDK[@traceojs/dashboard-sdk] -. placeholder .- Root
+  NestJS[@traceojs/nestjs] -. placeholder .- Root
+  Plugins[@traceojs/plugins] -. placeholder .- Root
 ```
 
-External dependencies are intentionally minimal: root dev dependencies are TypeScript, Turbo, and Node types; package code uses only Node built-ins. No circular package dependencies were found. The main questionable direction is `@traceo/storage -> @traceo/core`, because storage should likely depend on shared event contracts rather than core runtime behavior long term.
+External dependencies are intentionally minimal: root dev dependencies are TypeScript, Turbo, and Node types; package code uses only Node built-ins. No circular package dependencies were found. The main questionable direction is `@traceojs/storage -> @traceojs/core`, because storage should likely depend on shared event contracts rather than core runtime behavior long term.
 
 ## 4. Package-by-Package Assessment
 
-### @traceo/cli
+### @traceojs/cli
 
 #### Responsibility
 Command-line access to persisted trace events.
@@ -72,7 +72,7 @@ Command-line access to persisted trace events.
 - Package exists with TypeScript build configuration.
 
 #### Dependencies
-- Internal: `@traceo/storage`.
+- Internal: `@traceojs/storage`.
 - External/runtime: Node `path` and `os` built-ins.
 
 #### Public API
@@ -88,7 +88,7 @@ Supports basic local inspection of captured events, but CLI tooling is future fu
 #### Recommendation
 Keep CLI secondary; after storage/server contracts stabilize, make CLI consume stable query APIs and add package `bin` metadata.
 
-### @traceo/core
+### @traceojs/core
 
 #### Responsibility
 Core event contracts, event factories, and minimal capture forwarding through an injected sink.
@@ -115,7 +115,7 @@ Core event contracts, event factories, and minimal capture forwarding through an
 
 #### Problems
 - Event schema is loose (`type: string`, arbitrary payload).
-- Duplicates concepts with `@traceo/shared`.
+- Duplicates concepts with `@traceojs/shared`.
 - Built `.js`/`.d.ts` files exist in `src`, creating potential drift from TypeScript source.
 
 #### PRD Alignment
@@ -124,7 +124,7 @@ Partially supports HTTP request/response/error event creation, but does not yet 
 #### Recommendation
 Next stabilize a single event contract and correlation model before adding more adapters.
 
-### @traceo/dashboard-sdk
+### @traceojs/dashboard-sdk
 
 #### Responsibility
 Planned SDK/client for dashboard communication.
@@ -153,7 +153,7 @@ Dashboard integration is missing.
 #### Recommendation
 Do not build until server API and dashboard app needs are clearer.
 
-### @traceo/express
+### @traceojs/express
 
 #### Responsibility
 Express-style middleware for HTTP request and response event capture.
@@ -175,7 +175,7 @@ Express-style middleware for HTTP request and response event capture.
 - Package manifest and TS project are present.
 
 #### Dependencies
-- Manifest: `@traceo/core`, `@traceo/shared`.
+- Manifest: `@traceojs/core`, `@traceojs/shared`.
 - Source currently imports neither internal package, so manifest dependencies are unused in implementation.
 
 #### Public API
@@ -191,7 +191,7 @@ Partially satisfies Express adapter and HTTP request/response monitoring.
 #### Recommendation
 First implementation task should align this middleware with core event factories/contracts and prove adapter-to-core-to-storage capture without redesigning architecture.
 
-### @traceo/nestjs
+### @traceojs/nestjs
 
 #### Responsibility
 Planned NestJS integration.
@@ -220,7 +220,7 @@ NestJS adapter is missing.
 #### Recommendation
 Build after Express vertical slice proves the core capture/storage/server path.
 
-### @traceo/plugins
+### @traceojs/plugins
 
 #### Responsibility
 Planned plugin ecosystem foundation.
@@ -249,7 +249,7 @@ Plugin ecosystem is future functionality and currently missing.
 #### Recommendation
 Do not implement in the initial vertical slice.
 
-### @traceo/server
+### @traceojs/server
 
 #### Responsibility
 Simple HTTP API over persisted trace events.
@@ -268,7 +268,7 @@ Simple HTTP API over persisted trace events.
 - Package manifest and TS project are present.
 
 #### Dependencies
-- Internal: `@traceo/storage`.
+- Internal: `@traceojs/storage`.
 - External/runtime: Node `http`, `path`, and `os` built-ins.
 
 #### Public API
@@ -284,7 +284,7 @@ Partially supports server-side dashboard data APIs but no actual dashboard UI.
 #### Recommendation
 After capture/storage are stable, extract app/server creation APIs and add secure dashboard-facing endpoints.
 
-### @traceo/shared
+### @traceojs/shared
 
 #### Responsibility
 Shared event type definitions.
@@ -306,7 +306,7 @@ Shared event type definitions.
 
 #### Problems
 - Built files exist in `src` and may drift.
-- Types overlap with `@traceo/core` and `@traceo/storage` local `TraceEventLike` interfaces.
+- Types overlap with `@traceojs/core` and `@traceojs/storage` local `TraceEventLike` interfaces.
 
 #### PRD Alignment
 Supports foundational contracts only.
@@ -314,7 +314,7 @@ Supports foundational contracts only.
 #### Recommendation
 Make shared the stable home for event contracts, or intentionally fold it into core; avoid duplication.
 
-### @traceo/storage
+### @traceojs/storage
 
 #### Responsibility
 Persistence and query utilities for trace events.
@@ -332,7 +332,7 @@ Persistence and query utilities for trace events.
 - Package manifest and TS project are present.
 
 #### Dependencies
-- Manifest: `@traceo/core`, though source only uses local event interfaces and query modules.
+- Manifest: `@traceojs/core`, though source only uses local event interfaces and query modules.
 - External/runtime: Node `fs` built-ins.
 
 #### Public API
@@ -460,4 +460,4 @@ Existing documentation covers product positioning, architecture, low-level desig
 
 ## 15. First Implementation Task
 
-Exactly one first coding task: update `@traceo/express` so `createTraceoMiddleware()` uses the canonical core event factories/contracts for request and response events, preserves request/response correlation, and add/adjust tests proving an Express request flows through the middleware into a `@traceo/storage` store. Do not add SQLite, dashboard UI, new framework adapters, or new dependencies in that task.
+Exactly one first coding task: update `@traceojs/express` so `createTraceoMiddleware()` uses the canonical core event factories/contracts for request and response events, preserves request/response correlation, and add/adjust tests proving an Express request flows through the middleware into a `@traceojs/storage` store. Do not add SQLite, dashboard UI, new framework adapters, or new dependencies in that task.

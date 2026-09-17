@@ -1,5 +1,5 @@
 {
-  "name": "@traceo/shared",
+  "name": "@traceojs/shared",
   "version": "0.1.0",
   "description": "Shared Traceo types and utilities",
   "license": "MIT",

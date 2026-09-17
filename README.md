@@ -6,9 +6,9 @@ Traceo is a self-hosted Node.js observability toolkit. It captures HTTP requests
 
 Traceo is structured as a monorepo containing core libraries, framework adapters, storage engines, and a standalone dashboard.
 
-- **Core & Adapters**: `@traceo/core` handles event creation and redaction. Framework adapters (`@traceo/express`, `@traceo/nestjs`) capture `REQUEST_STARTED`, `REQUEST_COMPLETED`, and `error` events. Secrets are redacted before persistence, and bodies are opt-in and size-limited.
-- **Storage**: `@traceo/storage` provides pluggable persistence (Memory, JSON file, SQLite). SQLite is the default engine.
-- **Server**: `@traceo/server` exposes a REST API (`/requests`, `/timeline/:requestId`) and serves the dashboard. It supports optional basic auth / API keys, and the dashboard is disabled in production by default.
+- **Core & Adapters**: `@traceojs/core` handles event creation and redaction. Framework adapters (`@traceojs/express`, `@traceojs/nestjs`) capture `REQUEST_STARTED`, `REQUEST_COMPLETED`, and `error` events. Secrets are redacted before persistence, and bodies are opt-in and size-limited.
+- **Storage**: `@traceojs/storage` provides pluggable persistence (Memory, JSON file, SQLite). SQLite is the default engine.
+- **Server**: `@traceojs/server` exposes a REST API (`/requests`, `/timeline/:requestId`) and serves the dashboard. It supports optional basic auth / API keys, and the dashboard is disabled in production by default.
 - **Dashboard ("Traceo — Ledger")**: A vanilla HTML/CSS/JS single-page application (`apps/dashboard`) with a warm, numbered log-book theme. It provides a split-pane view for request inspection and timeline detail.
 
 ## Requirements
@@ -20,13 +20,13 @@ Traceo is structured as a monorepo containing core libraries, framework adapters
 **Express:**
 
 ```bash
-npm install @traceo/express
+npm install @traceojs/express
 ```
 
 **NestJS:**
 
 ```bash
-npm install @traceo/nestjs
+npm install @traceojs/nestjs
 ```
 
 Then call `attachTraceo` (see below) and set env vars. Full publish guide: [docs/PUBLISH.md](docs/PUBLISH.md).
@@ -47,7 +47,7 @@ Same app code everywhere. Nginx only decides the public URL.
 
 ```js
 import express from 'express';
-import { attachTraceo } from '@traceo/express';
+import { attachTraceo } from '@traceojs/express';
 
 const app = express();
 app.use(express.json());
@@ -70,7 +70,7 @@ Nest’s default HTTP adapter is Express-compatible, so Traceo mounts the same w
 
 ```ts
 import { NestFactory } from '@nestjs/core';
-import { attachTraceo } from '@traceo/nestjs';
+import { attachTraceo } from '@traceojs/nestjs';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -87,8 +87,8 @@ bootstrap();
 ```
 
 ```bash
-npm install @traceo/express   # Express
-npm install @traceo/nestjs    # NestJS
+npm install @traceojs/express   # Express
+npm install @traceojs/nestjs    # NestJS
 ```
 
 `.env` (local and production — same for Express and NestJS):
@@ -118,13 +118,13 @@ Then: `https://xyz.com/traceo/`
 
 | Package | Role |
 | --- | --- |
-| `@traceo/core` | Event factories, redaction, capture sink |
-| `@traceo/express` | Express middleware and error handler |
-| `@traceo/nestjs` | NestJS middleware and exception filter |
-| `@traceo/storage` | `TraceoStorage` plus memory, JSON, and SQLite stores |
-| `@traceo/server` | HTTP API and dashboard server |
+| `@traceojs/core` | Event factories, redaction, capture sink |
+| `@traceojs/express` | Express middleware and error handler |
+| `@traceojs/nestjs` | NestJS middleware and exception filter |
+| `@traceojs/storage` | `TraceoStorage` plus memory, JSON, and SQLite stores |
+| `@traceojs/server` | HTTP API and dashboard server |
 | `apps/dashboard` | "Traceo — Ledger" vanilla HTML/CSS/JS frontend |
-| `@traceo/cli` | `timeline` and `events` commands |
+| `@traceojs/cli` | `timeline` and `events` commands |
 
 ## Storage
 

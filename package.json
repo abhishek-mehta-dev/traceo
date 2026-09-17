@@ -16,8 +16,8 @@
   "scripts": {
     "build": "tsc -b && node packages/server/scripts/copy-dashboard.js",
     "test": "node --test test/*.test.js packages/express/src/*.test.js packages/nestjs/src/*.test.js",
-    "start": "pnpm --filter @traceo/example-express-basic start",
-    "example": "pnpm --filter @traceo/example-express-basic start",
+    "start": "pnpm --filter @traceojs/example-express-basic start",
+    "example": "pnpm --filter @traceojs/example-express-basic start",
     "pack:check": "pnpm build && pnpm -r --filter './packages/*' exec npm pack --dry-run",
     "publish:packages": "pnpm build && pnpm -r --filter './packages/*' publish --access public --no-git-checks"
   },

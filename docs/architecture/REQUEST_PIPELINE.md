@@ -4,15 +4,15 @@ Traceo's current request pipeline captures Express HTTP lifecycle data and store
 
 ```text
 Express request
-  -> @traceo/express middleware
-  -> @traceo/core HTTP event factories
+  -> @traceojs/express middleware
+  -> @traceojs/core HTTP event factories
   -> Canonical Traceo HTTP event
   -> TraceoEventSink-compatible storage
 ```
 
 ## Canonical events
 
-`@traceo/core` owns the framework-agnostic HTTP event contract. The first supported lifecycle event types are:
+`@traceojs/core` owns the framework-agnostic HTTP event contract. The first supported lifecycle event types are:
 
 - `REQUEST_STARTED`
 - `REQUEST_COMPLETED`
@@ -21,7 +21,7 @@ Both events include an event id, trace id, request id, timestamp, request metada
 
 ## Express adapter
 
-`@traceo/express` translates Express-compatible request and response data into core factories using a capture policy:
+`@traceojs/express` translates Express-compatible request and response data into core factories using a capture policy:
 
 - Method, URL, route, IP, and user agent are captured.
 - Query parameters are captured by default; sensitive query names are redacted in both the query object and the URL.

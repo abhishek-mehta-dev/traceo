@@ -5,14 +5,14 @@ import {
   errorFromUnknown,
   type TraceCapturePolicy,
   type TraceoEventSink
-} from '@traceo/core';
+} from '@traceojs/core';
 import {
   createTraceoMount,
   normalizeBasePath,
   type TraceoBasicAuth,
   type TraceoServerOptions
-} from '@traceo/server';
-import { createTraceoStoreFromEnv, type TraceoStorage } from '@traceo/storage';
+} from '@traceojs/server';
+import { createTraceoStoreFromEnv, type TraceoStorage } from '@traceojs/storage';
 
 export interface TraceoExpressOptions {
   sink: TraceoEventSink;

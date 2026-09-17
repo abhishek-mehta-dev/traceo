@@ -2,8 +2,8 @@
 
 const { join } = require('node:path');
 const express = require('express');
-const { attachTraceo } = require('@traceo/express');
-const { SqliteTraceStore } = require('@traceo/storage');
+const { attachTraceo } = require('@traceojs/express');
+const { SqliteTraceStore } = require('@traceojs/storage');
 
 async function main() {
   process.env.TRACEO_ENABLED = process.env.TRACEO_ENABLED || 'true';

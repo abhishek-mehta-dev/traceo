@@ -1,5 +1,5 @@
 {
-  "name": "@traceo/storage",
+  "name": "@traceojs/storage",
   "version": "0.1.0",
   "description": "Traceo storage adapters — memory, JSON file, and SQLite",
   "license": "MIT",

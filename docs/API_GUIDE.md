@@ -5,19 +5,19 @@ This guide documents the public APIs that are available in the current Traceo wo
 ## Current Status
 Traceo has moved beyond the initial repository setup milestone into the core package and framework integration phases. The workspace currently includes:
 
-- `@traceo/core` for creating request, response, and error events.
-- `@traceo/storage` for in-memory and file-backed event storage.
-- `@traceo/express` for request/response capture in Express-style middleware.
-- `@traceo/server` for local HTTP access to captured events.
-- `@traceo/cli` for local timeline and event inspection.
+- `@traceojs/core` for creating request, response, and error events.
+- `@traceojs/storage` for in-memory and file-backed event storage.
+- `@traceojs/express` for request/response capture in Express-style middleware.
+- `@traceojs/server` for local HTTP access to captured events.
+- `@traceojs/cli` for local timeline and event inspection.
 
 ## Core package
 
 Use `TraceoCore` to send normalized events to any compatible sink.
 
 ```ts
-import { TraceoCore, createRequestEvent } from '@traceo/core';
-import { InMemoryTraceStore } from '@traceo/storage';
+import { TraceoCore, createRequestEvent } from '@traceojs/core';
+import { InMemoryTraceStore } from '@traceojs/storage';
 
 const store = new InMemoryTraceStore();
 const traceo = new TraceoCore(store, {
@@ -54,7 +54,7 @@ Current event helpers:
 
 ## Storage package
 
-`@traceo/storage` exposes two stores:
+`@traceojs/storage` exposes two stores:
 
 - `InMemoryTraceStore` for tests, examples, and short-lived processes.
 - `FileTraceStore` for local persistence to JSON files.
@@ -86,8 +86,8 @@ Use `createTraceoMiddleware` to capture correlated request and response events f
 
 ```ts
 import express from 'express';
-import { FileTraceStore } from '@traceo/storage';
-import { createTraceoMiddleware } from '@traceo/express';
+import { FileTraceStore } from '@traceojs/storage';
+import { createTraceoMiddleware } from '@traceojs/express';
 
 const app = express();
 const store = new FileTraceStore('./.traceo/events.json');
@@ -103,7 +103,7 @@ The middleware attaches `traceoRequestId` to the request object, captures a requ
 
 ## Local server
 
-Run `@traceo/server` to inspect file-backed events over HTTP. The server reads from `TRACEO_DATA_FILE` or defaults to `~/.traceo/events.json`.
+Run `@traceojs/server` to inspect file-backed events over HTTP. The server reads from `TRACEO_DATA_FILE` or defaults to `~/.traceo/events.json`.
 
 Available endpoints:
 

@@ -17,7 +17,7 @@ Phase 11 validated the current Express vertical slice against an existing produc
 - [x] SQLite storage working (`amity-ai-assistant-backend/traceo.sqlite`)
 - [x] Dashboard accessible
 
-Integration uses the same production shape locally: `attachTraceo(app)` from `@traceo/express` (installed as a normal dependency). With `TRACEO_ENABLED=true`, capture and the dashboard run on the Amity Express port under `/traceo`. No separate dashboard process and no `TRACEO_ROOT` loader. Nginx only exposes that path publicly in production.
+Integration uses the same production shape locally: `attachTraceo(app)` from `@traceojs/express` (installed as a normal dependency). With `TRACEO_ENABLED=true`, capture and the dashboard run on the Amity Express port under `/traceo`. No separate dashboard process and no `TRACEO_ROOT` loader. Nginx only exposes that path publicly in production.
 
 ## Request Tests
 

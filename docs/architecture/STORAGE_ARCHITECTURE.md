@@ -23,17 +23,17 @@ SQLite is implemented as another adapter behind the same contract. Express, core
 
 ```text
 Express request
-  → @traceo/express middleware
-  → @traceo/core HTTP event factories
+  → @traceojs/express middleware
+  → @traceojs/core HTTP event factories
   → TraceoEventSink.capture() / TraceoStorage.capture()
   → InMemoryTraceStore or FileTraceStore
 ```
 
-`@traceo/express` depends on the core sink abstraction. It does not import a storage engine.
+`@traceojs/express` depends on the core sink abstraction. It does not import a storage engine.
 
-`@traceo/core` creates events and forwards them to whatever sink was injected. It does not import filesystem or JSON storage.
+`@traceojs/core` creates events and forwards them to whatever sink was injected. It does not import filesystem or JSON storage.
 
-`@traceo/server` and `@traceo/cli` query `TraceoStorage`. Their HTTP/CLI entrypoints may choose a default JSON file store at the composition root (`TRACEO_DATA_FILE` or `~/.traceo/events.json`). Request handlers and commands do not read that file themselves.
+`@traceojs/server` and `@traceojs/cli` query `TraceoStorage`. Their HTTP/CLI entrypoints may choose a default JSON file store at the composition root (`TRACEO_DATA_FILE` or `~/.traceo/events.json`). Request handlers and commands do not read that file themselves.
 
 ## Contract
 

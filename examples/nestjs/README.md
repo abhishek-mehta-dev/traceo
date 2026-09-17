@@ -1,10 +1,10 @@
 # NestJS example
 
-Use `@traceo/nestjs` the same way as Express — Nest's default HTTP adapter is Express-compatible.
+Use `@traceojs/nestjs` the same way as Express — Nest's default HTTP adapter is Express-compatible.
 
 ```ts
 import { NestFactory } from '@nestjs/core';
-import { attachTraceo } from '@traceo/nestjs';
+import { attachTraceo } from '@traceojs/nestjs';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -21,7 +21,7 @@ bootstrap();
 ```
 
 ```bash
-npm install @traceo/nestjs
+npm install @traceojs/nestjs
 ```
 
 Env (same as Express):

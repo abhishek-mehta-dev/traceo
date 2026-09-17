@@ -1,7 +1,7 @@
 /**
  * Traceo dashboard — Signal desk.
  *
- * Served by @traceo/server alongside index.html, styles.css, and
+ * Served by @traceojs/server alongside index.html, styles.css, and
  * json-preview.js (which provides window.TraceoJsonPreview for parsing
  * and recovering truncated JSON bodies).
  *

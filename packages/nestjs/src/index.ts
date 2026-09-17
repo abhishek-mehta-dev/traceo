@@ -1,4 +1,4 @@
-import { createErrorEvent, errorFromUnknown, type TraceoEventSink } from '@traceo/core';
+import { createErrorEvent, errorFromUnknown, type TraceoEventSink } from '@traceojs/core';
 import {
   attachTraceo as attachTraceoExpress,
   createTraceoErrorHandler,
@@ -6,7 +6,7 @@ import {
   type TraceoAttachOptions,
   type TraceoAttachment,
   type TraceoExpressOptions
-} from '@traceo/express';
+} from '@traceojs/express';
 
 export type TraceoNestOptions = TraceoExpressOptions;
 export type { TraceoAttachOptions, TraceoAttachment };

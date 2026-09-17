@@ -1,4 +1,4 @@
-import { createTraceoStoreFromEnv } from '@traceo/storage';
+import { createTraceoStoreFromEnv } from '@traceojs/storage';
 import { createTraceoServer, type TraceoBasicAuth, type TraceoServerOptions } from './create-server';
 
 export {

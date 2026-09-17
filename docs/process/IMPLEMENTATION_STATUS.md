@@ -18,4 +18,4 @@
 
 ## Current phase
 
-Phases 1–11 are complete. Phase 11 dogfooded `@traceo/express` against `amity-ai-assistant-backend`. See [DOGFOODING.md](DOGFOODING.md). Later PRD items include Prisma/Mongoose, live websockets, additional frameworks, and a plugin marketplace.
+Phases 1–11 are complete. Phase 11 dogfooded `@traceojs/express` against `amity-ai-assistant-backend`. See [DOGFOODING.md](DOGFOODING.md). Later PRD items include Prisma/Mongoose, live websockets, additional frameworks, and a plugin marketplace.

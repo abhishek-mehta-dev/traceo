@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import type { TraceEventQuery, TraceoStorage } from '@traceo/storage';
+import type { TraceEventQuery, TraceoStorage } from '@traceojs/storage';
 
 export async function runTraceoCli(argv: string[], storage: TraceoStorage): Promise<number> {
   const [, , command, requestIdOrFirstArg, ...rest] = argv;
