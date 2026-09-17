@@ -17,19 +17,19 @@ Traceo is structured as a monorepo containing core libraries, framework adapters
 
 ## Install from npm (production)
 
-**Express:**
+**Express:** [`@traceojs/express`](https://www.npmjs.com/package/@traceojs/express)
 
 ```bash
 npm install @traceojs/express
 ```
 
-**NestJS:**
+**NestJS:** [`@traceojs/nestjs`](https://www.npmjs.com/package/@traceojs/nestjs)
 
 ```bash
 npm install @traceojs/nestjs
 ```
 
-Then call `attachTraceo` (see below) and set env vars. Full publish guide: [docs/PUBLISH.md](docs/PUBLISH.md).
+Then call `attachTraceo` (see below) and set env vars. Package READMEs on npm cover install, usage, and API. Publisher notes: [docs/PUBLISH.md](docs/PUBLISH.md).
 
 ## Quick start (this monorepo)
 
@@ -91,14 +91,18 @@ npm install @traceojs/express   # Express
 npm install @traceojs/nestjs    # NestJS
 ```
 
-`.env` (local and production — same for Express and NestJS):
+**Required env** (only this is needed to run):
 
 ```bash
 TRACEO_ENABLED=true
-TRACEO_DASHBOARD=1              # required in production to serve the UI
-TRACEO_PATH=/traceo
+```
+
+Optional (production tips):
+
+```bash
+TRACEO_BASIC_AUTH=user:password   # recommended if the dashboard is exposed
 TRACEO_SQLITE_FILE=./traceo.sqlite
-TRACEO_BASIC_AUTH=user:password   # recommended in production
+TRACEO_PATH=/traceo
 ```
 
 - Local: `http://localhost:3000/traceo/` (or your app port)

@@ -1,6 +1,6 @@
 {
   "name": "@traceojs/nestjs",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Traceo NestJS adapter — attach capture and the Ledger dashboard with minimal boilerplate",
   "license": "MIT",
   "author": "Abhishek Mehta",

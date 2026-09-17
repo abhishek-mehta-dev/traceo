@@ -1,6 +1,6 @@
 {
   "name": "@traceojs/server",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Traceo HTTP API and Ledger dashboard server",
   "license": "MIT",
   "author": "Abhishek Mehta",
