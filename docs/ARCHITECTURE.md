@@ -19,7 +19,7 @@ The system follows a modular, layered architecture with clear separation between
 - Core domain layer: normalizes, validates, and correlates events
 - Storage layer: persists events and metadata
 - API layer: exposes dashboard and management endpoints
-- Dashboard layer: renders activity and detailed event views
+- Dashboard layer: renders activity and detailed event views (currently implemented as a vanilla HTML/CSS/JS "Ledger" themed single-page application)
 - Plugin layer: extends adapters, storage, and integrations
 
 ## 5. Runtime Flow

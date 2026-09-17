@@ -2,14 +2,14 @@
 
 Traceo is a self-hosted Node.js observability toolkit. It captures HTTP requests, responses, and errors, stores them locally, and lets you inspect timelines from a localhost dashboard.
 
-## Current vertical slice
+## Current Architecture
 
-- Express and NestJS adapters
-- Canonical `REQUEST_STARTED`, `REQUEST_COMPLETED`, and `error` events
-- Storage contract with memory, JSON file, and SQLite adapters
-- Local dashboard for request list and timeline detail
-- Optional basic auth / API key; dashboard off in production by default
-- Secrets redacted before persist; bodies opt-in and size-limited
+Traceo is structured as a monorepo containing core libraries, framework adapters, storage engines, and a standalone dashboard.
+
+- **Core & Adapters**: `@traceo/core` handles event creation and redaction. Framework adapters (`@traceo/express`, `@traceo/nestjs`) capture `REQUEST_STARTED`, `REQUEST_COMPLETED`, and `error` events. Secrets are redacted before persistence, and bodies are opt-in and size-limited.
+- **Storage**: `@traceo/storage` provides pluggable persistence (Memory, JSON file, SQLite). SQLite is the default engine.
+- **Server**: `@traceo/server` exposes a REST API (`/requests`, `/timeline/:requestId`) and serves the dashboard. It supports optional basic auth / API keys, and the dashboard is disabled in production by default.
+- **Dashboard ("Traceo — Ledger")**: A vanilla HTML/CSS/JS single-page application (`apps/dashboard`) with a warm, numbered log-book theme. It provides a split-pane view for request inspection and timeline detail.
 
 ## Quick start
 
@@ -87,7 +87,8 @@ Run `pnpm build` in the Traceo repo first so `dist/` and dashboard assets exist.
 | `@traceo/express` | Express middleware and error handler |
 | `@traceo/nestjs` | NestJS middleware and exception filter |
 | `@traceo/storage` | `TraceoStorage` plus memory, JSON, and SQLite stores |
-| `@traceo/server` | HTTP API and dashboard |
+| `@traceo/server` | HTTP API and dashboard server |
+| `apps/dashboard` | "Traceo — Ledger" vanilla HTML/CSS/JS frontend |
 | `@traceo/cli` | `timeline` and `events` commands |
 
 ## Storage

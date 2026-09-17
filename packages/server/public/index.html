@@ -7,7 +7,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="32x32">
   <link rel="apple-touch-icon" href="favicon-32.png">
-  <meta name="theme-color" content="#0b1017">
+  <meta name="theme-color" content="#080d14">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,22 +15,26 @@
 </head>
 <body>
   <!--
-    Traceo dashboard ("signal desk"), served by @traceo/server.
-    Layout: masthead (views, search, live controls) → workspace
-    (hop stream on the left, inspect pane on the right) → footer dock.
+    Traceo – Signal Desk
+    Layout: masthead → mobile-switch → workspace (stream | inspect) → dock
     All behavior lives in app.js; styling in styles.css.
   -->
   <div class="shell">
-    <!-- Masthead: brand, view switcher, search + method filter, live/refresh/clear -->
+
+    <!-- ── Masthead ───────────────────────────────────────── -->
     <header class="mast">
       <div class="mast-top">
+
+        <!-- Brand -->
         <div class="mark">
-          <img src="favicon.svg" width="32" height="32" alt="" decoding="async">
+          <img src="favicon.svg" width="30" height="30" alt="" decoding="async">
           <div>
             <strong>Traceo</strong>
             <em>signal desk</em>
           </div>
         </div>
+
+        <!-- View switcher -->
         <nav class="modes" aria-label="Views">
           <button class="active" data-section="requests" type="button" aria-pressed="true">
             Requests <span class="badge" id="badge-requests">0</span>
@@ -40,6 +44,8 @@
           </button>
           <button data-section="events" type="button" aria-pressed="false">Timeline</button>
         </nav>
+
+        <!-- Live controls -->
         <div class="actions">
           <button id="live" type="button" title="Toggle live (L)" aria-pressed="false">
             <span class="pulse" id="live-dot" aria-hidden="true"></span>
@@ -50,9 +56,11 @@
           <span class="hint" id="status" aria-live="polite">Loading…</span>
         </div>
       </div>
+
+      <!-- Search + method filter -->
       <div class="mast-tools" id="search-wrap">
         <div class="field">
-          <svg class="field-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none">
+          <svg class="field-icon" width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="none">
             <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/>
             <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
@@ -70,7 +78,7 @@
       </div>
     </header>
 
-    <!-- Small screens: switch between the hop list and the inspect pane -->
+    <!-- ── Mobile pane switcher (hidden on desktop) ───────── -->
     <div class="mobile-switch" role="tablist" aria-label="Hops or inspect">
       <button type="button" class="active" data-pane="stream" role="tab" aria-selected="true">
         <span class="mobile-switch-label">Hops</span>
@@ -80,25 +88,34 @@
       </button>
     </div>
 
+    <!-- ── Main workspace ────────────────────────────────── -->
     <div class="workspace" data-pane="stream">
-      <!-- Stream: captured requests ("hops") with status filters and pager -->
+
+      <!-- Stream: hop list + filters + pager -->
       <section class="stream" id="stream">
+
+        <!-- Sticky stream header -->
         <div class="stream-head">
           <div class="stats">
             <span class="stats-label">Stream</span>
             <span><strong id="stat-count">0</strong> hops · <strong id="stat-errors">0</strong> faults</span>
           </div>
+
+          <!-- Status filter chips -->
           <div class="filters" id="chips" role="group" aria-label="Status filters">
-            <button class="chip active" data-range="" type="button" aria-pressed="true">All <span class="n" data-count=""></span></button>
-            <button class="chip" data-range="2" type="button" aria-pressed="false">2xx <span class="n" data-count="2"></span></button>
-            <button class="chip" data-range="4" type="button" aria-pressed="false">4xx <span class="n" data-count="4"></span></button>
-            <button class="chip" data-range="5" type="button" aria-pressed="false">5xx <span class="n" data-count="5"></span></button>
-            <button class="chip" data-range="errors" type="button" aria-pressed="false">Faults <span class="n" data-count="errors"></span></button>
+            <button class="chip active" data-range=""      type="button" aria-pressed="true">All <span class="n" data-count=""></span></button>
+            <button class="chip"        data-range="2"     type="button" aria-pressed="false">2xx <span class="n" data-count="2"></span></button>
+            <button class="chip"        data-range="4"     type="button" aria-pressed="false">4xx <span class="n" data-count="4"></span></button>
+            <button class="chip"        data-range="5"     type="button" aria-pressed="false">5xx <span class="n" data-count="5"></span></button>
+            <button class="chip"        data-range="errors" type="button" aria-pressed="false">Faults <span class="n" data-count="errors"></span></button>
             <button class="chip chip-reset" id="clear" type="button">Reset</button>
           </div>
+
+          <!-- Pager controls -->
           <nav class="pager" id="pager" aria-label="Hop pages">
             <div class="pager-nav">
-              <button id="page-prev" class="pager-btn" type="button" disabled aria-label="Previous page" title="Already on the first page">
+              <button id="page-prev" class="pager-btn" type="button" disabled
+                      aria-label="Previous page" title="Already on the first page">
                 <span class="chev" aria-hidden="true">‹</span>
                 <span>Prev</span>
               </button>
@@ -106,12 +123,14 @@
                 <p id="page-label" class="pager-range">No hops yet</p>
                 <label class="pager-jump">
                   <span class="sr-only">Page number</span>
-                  <input id="page-input" type="number" min="1" max="1" value="1" inputmode="numeric" autocomplete="off" aria-describedby="page-label">
+                  <input id="page-input" type="number" min="1" max="1" value="1"
+                         inputmode="numeric" autocomplete="off" aria-describedby="page-label">
                   <span aria-hidden="true">of</span>
                   <span id="page-total">1</span>
                 </label>
               </div>
-              <button id="page-next" class="pager-btn" type="button" disabled aria-label="Next page" title="Already on the last page">
+              <button id="page-next" class="pager-btn" type="button" disabled
+                      aria-label="Next page" title="Already on the last page">
                 <span>Next</span>
                 <span class="chev" aria-hidden="true">›</span>
               </button>
@@ -127,8 +146,12 @@
           </nav>
           <p id="page-status" class="sr-only" aria-live="polite"></p>
         </div>
+
+        <!-- Scrollable hop list -->
         <input id="statusCode" type="hidden">
         <div class="list" id="list" aria-label="Hops on this page"></div>
+
+        <!-- Empty / no data state -->
         <div class="empty" id="empty" role="status">
           <div class="empty-visual" aria-hidden="true"></div>
           <h2>Waiting for the first hop</h2>
@@ -137,7 +160,7 @@
         </div>
       </section>
 
-      <!-- Inspect: request/response detail for the selected hop (app.js renders into #detail) -->
+      <!-- Inspect: detail view for the selected hop -->
       <section class="inspect" id="inspect">
         <div id="detail" class="empty">
           <div class="empty-visual" aria-hidden="true"></div>
@@ -147,6 +170,7 @@
       </section>
     </div>
 
+    <!-- ── Footer dock ───────────────────────────────────── -->
     <footer class="dock">
       <span class="dock-keys">
         <kbd>/</kbd> search
@@ -161,9 +185,10 @@
     </footer>
   </div>
 
+  <!-- Toast notification -->
   <div class="toast" id="toast">Copied</div>
 
-  <!-- Modal: expanded JSON view of a request, response, or timeline event -->
+  <!-- Modal: expanded JSON inspector -->
   <div class="modal-root" id="modal" hidden>
     <div class="modal-backdrop" data-modal-close></div>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -175,7 +200,7 @@
     </div>
   </div>
 
-  <!-- json-preview.js must load first: app.js reads window.TraceoJsonPreview -->
+  <!-- json-preview.js must load before app.js -->
   <script src="json-preview.js"></script>
   <script src="app.js"></script>
 </body>
