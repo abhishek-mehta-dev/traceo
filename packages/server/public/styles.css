@@ -85,7 +85,11 @@
   --stream-w: 340px; /* stream column width */
 }
 
-/* ─── 2. Reset & base ───────────────────────────────────────────────── */
+/* Ensure [hidden] always wins regardless of display rules set on the element */
+[hidden] {
+  display: none !important;
+}
+
 *,
 *::before,
 *::after {

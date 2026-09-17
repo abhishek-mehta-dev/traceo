@@ -583,8 +583,11 @@ function isFault(request) {
 }
 
 function matchesRange(request) {
-  if (state.section === "errors" || state.range === "errors")
-    return isFault(request);
+  // When on the Errors section, the server already filtered to faults only.
+  // Trust the server — show everything returned rather than re-filtering
+  // client-side (which uses a stricter definition and causes false "No hops match").
+  if (state.section === "errors") return true;
+  if (state.range === "errors") return isFault(request);
   if (!state.range) return true;
   return String(request.statusCode || "").startsWith(state.range);
 }
@@ -865,8 +868,14 @@ function renderList(options = {}) {
   );
   els.list.innerHTML = "";
   const universe = countRange("");
+  // noData: nothing at all has been captured yet (no filters, no data)
   const noData =
-    universe === 0 && !els.search.value && !els.method.value && !state.range;
+    universe === 0 &&
+    !els.search.value &&
+    !els.method.value &&
+    !state.range &&
+    state.section === "requests";
+  // filteredOut: data exists but current filters produce zero results
   const filteredOut = !visible.length && !noData;
   els.empty.hidden = !(noData || filteredOut);
   els.list.hidden = noData || filteredOut;
@@ -1275,9 +1284,17 @@ async function loadRequests(options = {}) {
   }
   if (added.length && state.live && !state.following)
     toast(added.length + " new hop" + (added.length === 1 ? "" : "s"));
+  // Preserve the user's scroll position in the hop list.
+  // Only jump to top when following (user is at top and live-auto-tracking).
   const top = els.list.scrollTop;
+  const wasAtTop = top < 40; // within ~1 hop height of the top
   renderList();
-  els.list.scrollTop = state.live && state.following ? 0 : top;
+  if (state.live && state.following && wasAtTop) {
+    setListScroll(0);
+  } else {
+    // Don't touch scroll at all — restore exactly where the user was.
+    setListScroll(top);
+  }
   setTimeout(() => {
     state.requests.forEach((item) => {
       item._flash = false;
@@ -1344,6 +1361,34 @@ function typing() {
 }
 
 /* ─── 9. Event wiring ──────────────────────────────────────────────── */
+
+// ── Hop list scroll: detect when the user manually scrolls away from the
+// top and mark state.following = false so live polling doesn't fight them.
+// We use a flag to distinguish programmatic scrolls (which set this flag)
+// from genuine user-initiated scroll gestures.
+let _programmaticScroll = false;
+els.list.addEventListener(
+  "scroll",
+  () => {
+    if (_programmaticScroll) return;
+    // If the user scrolled more than ~40px from the top, stop following.
+    if (els.list.scrollTop > 40) {
+      state.following = false;
+    }
+  },
+  { passive: true },
+);
+
+// Wrap the scroll-top setter so we can mark it programmatic and not
+// accidentally trigger the "unfollow" listener above.
+function setListScroll(top) {
+  _programmaticScroll = true;
+  els.list.scrollTop = top;
+  // Reset on next tick — by then the scroll event will have fired.
+  requestAnimationFrame(() => {
+    _programmaticScroll = false;
+  });
+}
 
 document.querySelector(".mobile-switch").addEventListener("click", (event) => {
   const button = event.target.closest("[data-pane]");
