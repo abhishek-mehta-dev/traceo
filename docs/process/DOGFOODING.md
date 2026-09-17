@@ -17,7 +17,7 @@ Phase 11 validated the current Express vertical slice against an existing produc
 - [x] SQLite storage working (`amity-ai-assistant-backend/traceo.sqlite`)
 - [x] Dashboard accessible
 
-Integration is env-gated (`TRACEO_ENABLED=1`) in `traceo.js`. Middleware sits after `express.json` / `cookie-parser`. The error handler sits immediately before Amity's global error handler. The dashboard shares the same `SqliteTraceStore` instance. Gated `/traceo-dogfood/*` routes were added only for controlled 2xx JSON, body echo, and a thrown 500; they are not business logic.
+Integration is env-gated (`TRACEO_ENABLED=true`) via `attachTraceo(app)`. Capture middleware and the dashboard both run on the same Express port under `/traceo` (override with `TRACEO_PATH`). No separate dashboard process or `TRACEO_DASHBOARD_PORT` is required. Until packages are published to npm, `TRACEO_ROOT` can still point at the local Traceo monorepo.
 
 ## Request Tests
 

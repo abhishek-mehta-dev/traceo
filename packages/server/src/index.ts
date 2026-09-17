@@ -3,8 +3,11 @@ import { createTraceoServer, type TraceoBasicAuth, type TraceoServerOptions } fr
 
 export {
   createTraceoServer,
+  createTraceoMount,
+  handleTraceoRequest,
   isDashboardEnabled,
   resolveDashboardDir,
+  normalizeBasePath,
   summarizeRequests,
   filterRequestSummaries,
   paginateRequestSummaries,

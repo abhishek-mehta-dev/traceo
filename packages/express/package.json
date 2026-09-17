@@ -9,6 +9,11 @@
   },
   "dependencies": {
     "@traceo/core": "workspace:*",
-    "@traceo/shared": "workspace:*"
+    "@traceo/server": "workspace:*",
+    "@traceo/shared": "workspace:*",
+    "@traceo/storage": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3"
   }
 }

@@ -4,11 +4,14 @@
     "rootDir": "src",
     "outDir": "dist",
     "composite": true,
+    "types": ["node"],
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
   "include": ["src/**/*"],
   "references": [
     { "path": "../core" },
-    { "path": "../shared" }
+    { "path": "../server" },
+    { "path": "../shared" },
+    { "path": "../storage" }
   ]
 }

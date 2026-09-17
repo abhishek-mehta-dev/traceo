@@ -19,7 +19,42 @@ pnpm build
 pnpm start
 ```
 
-Then open [http://127.0.0.1:3030/](http://127.0.0.1:3030/) and hit [http://127.0.0.1:3000/orders](http://127.0.0.1:3000/orders).
+Then open the dashboard at [http://127.0.0.1:3000/traceo/](http://127.0.0.1:3000/traceo/) and hit [http://127.0.0.1:3000/orders](http://127.0.0.1:3000/orders).
+
+## Use in any Express app
+
+```js
+const express = require('express');
+const { attachTraceo } = require('@traceo/express');
+
+const app = express();
+app.use(express.json());
+
+// TRACEO_ENABLED=true → capture + dashboard at /traceo on this same server
+const traceo = attachTraceo(app);
+
+// ... your routes ...
+
+app.use(traceo.errorHandler);
+app.use((err, _req, res, _next) => {
+  res.status(500).json({ error: err.message });
+});
+
+app.listen(8000);
+```
+
+Env:
+
+```bash
+TRACEO_ENABLED=true
+# optional:
+TRACEO_PATH=/traceo
+TRACEO_SQLITE_FILE=./traceo.sqlite
+TRACEO_BASIC_AUTH=user:password
+TRACEO_API_KEY=your-key
+```
+
+Open `http://localhost:8000/traceo/`. Behind nginx, proxy `/traceo/` to the same app.
 
 ## Packages
 

@@ -2,43 +2,27 @@
 
 const { join } = require('node:path');
 const express = require('express');
-const { createTraceoErrorHandler, createTraceoMiddleware } = require('@traceo/express');
-const { createTraceoServer } = require('@traceo/server');
+const { attachTraceo } = require('@traceo/express');
 const { SqliteTraceStore } = require('@traceo/storage');
 
-function listen(server, port, host) {
-  return new Promise((resolve, reject) => {
-    const onError = (error) => {
-      server.off('listening', onListening);
-      if (error.code === 'EADDRINUSE') {
-        reject(new Error(`Port ${port} is already in use. Stop the other process or set API_PORT / DASHBOARD_PORT.`));
-        return;
-      }
-      reject(error);
-    };
-    const onListening = () => {
-      server.off('error', onError);
-      resolve();
-    };
-    server.once('error', onError);
-    server.listen(port, host, onListening);
-  });
-}
-
 async function main() {
-  const store = new SqliteTraceStore(join(__dirname, 'traceo.sqlite'));
+  process.env.TRACEO_ENABLED = process.env.TRACEO_ENABLED || 'true';
+
   const app = express();
-  const apiPort = Number(process.env.API_PORT ?? 3000);
-  const dashboardPort = Number(process.env.DASHBOARD_PORT ?? process.env.PORT ?? 3030);
+  const port = Number(process.env.API_PORT ?? process.env.PORT ?? 3000);
   const host = process.env.TRACEO_HOST ?? '127.0.0.1';
+  const store = new SqliteTraceStore(join(__dirname, 'traceo.sqlite'));
 
   app.use(express.json());
-  app.use(createTraceoMiddleware({
-    sink: store,
+  const traceo = attachTraceo(app, {
+    enabled: true,
+    storage: store,
+    path: process.env.TRACEO_PATH || '/traceo',
+    dashboardDir: join(__dirname, '../../apps/dashboard/public'),
     captureHeaders: true,
     captureRequestBody: true,
     captureResponseBody: true
-  }));
+  });
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true });
@@ -56,22 +40,18 @@ async function main() {
     next(new Error('payment provider unavailable'));
   });
 
-  app.use(createTraceoErrorHandler({ sink: store }));
+  app.use(traceo.errorHandler);
   app.use((error, _req, res, _next) => {
     res.status(500).json({ error: error.message });
   });
 
-  const dashboard = createTraceoServer({
-    storage: store,
-    dashboard: true,
-    dashboardDir: join(__dirname, '../../apps/dashboard/public')
+  await new Promise((resolve, reject) => {
+    const server = app.listen(port, host, resolve);
+    server.once('error', reject);
   });
 
-  await listen(app, apiPort, host);
-  await listen(dashboard, dashboardPort, host);
-
-  console.log(`Example API:      http://${host}:${apiPort}/orders`);
-  console.log(`Traceo dashboard: http://${host}:${dashboardPort}/`);
+  console.log(`Example API:      http://${host}:${port}/orders`);
+  console.log(`Traceo dashboard: http://${host}:${port}${traceo.path}/`);
 }
 
 main().catch((error) => {

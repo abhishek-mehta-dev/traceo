@@ -50,9 +50,19 @@ importers:
       '@traceo/core':
         specifier: workspace:*
         version: link:../core
+      '@traceo/server':
+        specifier: workspace:*
+        version: link:../server
       '@traceo/shared':
         specifier: workspace:*
         version: link:../shared
+      '@traceo/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
 
   packages/nestjs:
     dependencies:

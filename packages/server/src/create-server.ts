@@ -14,6 +14,8 @@ export interface TraceoServerOptions {
   dashboardDir?: string;
   basicAuth?: TraceoBasicAuth;
   apiKey?: string;
+  /** Public URL prefix when mounted under a path, e.g. `/traceo`. */
+  basePath?: string;
 }
 
 export interface TraceRequestSummary {
@@ -62,6 +64,14 @@ function sendJson(res: ServerResponse, statusCode: number, body: unknown): void 
 
 function sendStorageFailure(res: ServerResponse): void {
   sendJson(res, 500, { error: 'Storage unavailable' });
+}
+
+export function normalizeBasePath(basePath?: string): string {
+  if (!basePath || basePath === '/') {
+    return '';
+  }
+  const trimmed = basePath.trim().replace(/\/+$/, '');
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 }
 
 export function isDashboardEnabled(options: Pick<TraceoServerOptions, 'dashboard'>): boolean {
@@ -266,26 +276,180 @@ function safeDashboardFile(dashboardDir: string, urlPath: string): string | null
   return resolved;
 }
 
-function serveDashboard(res: ServerResponse, filePath: string): boolean {
+function injectDashboardBase(html: string, basePath: string): string {
+  if (!basePath) {
+    return html;
+  }
+  const base = basePath.endsWith('/') ? basePath : `${basePath}/`;
+  const tag = `<base href="${base}"><script>window.__TRACEO_BASE__=${JSON.stringify(basePath)};</script>`;
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${tag}</head>`);
+  }
+  return tag + html;
+}
+
+function serveDashboard(res: ServerResponse, filePath: string, basePath: string): boolean {
   if (!existsSync(filePath)) {
     return false;
   }
-  const content = readFileSync(filePath);
   const headers: Record<string, string> = {
     'Content-Type': MIME_TYPES[extname(filePath)] ?? 'application/octet-stream'
   };
   if (/\.(svg|png|ico)$/.test(filePath)) {
     headers['Cache-Control'] = 'public, max-age=86400';
   }
+
+  if (extname(filePath) === '.html') {
+    const html = injectDashboardBase(readFileSync(filePath, 'utf8'), basePath);
+    res.writeHead(200, headers);
+    res.end(html);
+    return true;
+  }
+
+  const content = readFileSync(filePath);
   res.writeHead(200, headers);
   res.end(content);
   return true;
 }
 
-export function createTraceoServer(options: TraceoServerOptions): Server {
+/**
+ * Handle one Traceo dashboard/API request. `pathname` should already be
+ * relative to the mount (e.g. `/`, `/requests`, `/styles.css`).
+ */
+export async function handleTraceoRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  options: TraceoServerOptions,
+  pathname: string,
+  search = ''
+): Promise<boolean> {
   const { storage } = options;
   const dashboardEnabled = isDashboardEnabled(options);
   const dashboardDir = resolveDashboardDir(options.dashboardDir);
+  const basePath = normalizeBasePath(options.basePath);
+  const url = new URL((pathname || '/') + search, 'http://localhost');
+
+  try {
+    if (req.method === 'GET' && url.pathname === '/health') {
+      sendJson(res, 200, { status: 'ok' });
+      return true;
+    }
+
+    if (!isAuthorized(req, options)) {
+      sendUnauthorized(res, options);
+      return true;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/events') {
+      const events = await storage.query(parseQuery(url));
+      sendJson(res, 200, { events, count: events.length });
+      return true;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/errors') {
+      const events = await storage.query({ ...parseQuery(url), type: 'error' });
+      sendJson(res, 200, { events, count: events.length });
+      return true;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/requests') {
+      const query = parseQuery(url);
+      delete query.limit;
+      const events = await storage.query(query);
+      const all = summarizeRequests(events);
+      const statusFamily = url.searchParams.get('statusFamily')?.trim() ?? '';
+      const faults = url.searchParams.get('faults') === '1' || url.searchParams.get('faults') === 'true';
+      const filtered = filterRequestSummaries(all, {
+        statusFamily: /^[2-5]$/.test(statusFamily) ? statusFamily : undefined,
+        faults
+      });
+      const page = paginateRequestSummaries(
+        filtered,
+        url.searchParams.get('page'),
+        url.searchParams.get('pageSize')
+      );
+      sendJson(res, 200, {
+        ...page,
+        facets: requestFacets(all)
+      });
+      return true;
+    }
+
+    if (req.method === 'DELETE' && url.pathname === '/requests') {
+      const removed = await storage.clear();
+      sendJson(res, 200, { removed });
+      return true;
+    }
+
+    if (req.method === 'GET' && url.pathname.startsWith('/timeline/')) {
+      const requestId = url.pathname.split('/').pop() ?? '';
+      const timeline = await storage.getTimeline(requestId);
+      sendJson(res, 200, { requestId, timeline });
+      return true;
+    }
+
+    if (req.method === 'GET' && dashboardEnabled) {
+      const filePath = safeDashboardFile(dashboardDir, url.pathname);
+      if (filePath && serveDashboard(res, filePath, basePath)) {
+        return true;
+      }
+      if (url.pathname === '/' || url.pathname.startsWith('/dashboard')) {
+        sendJson(res, 404, { error: 'Dashboard not found' });
+        return true;
+      }
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/' || url.pathname.startsWith('/dashboard'))) {
+      sendJson(res, 404, { error: 'Dashboard disabled' });
+      return true;
+    }
+  } catch {
+    sendStorageFailure(res);
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Express-compatible middleware that serves Traceo under a path prefix.
+ * Mount with `app.use('/traceo', createTraceoMount(options))`.
+ */
+export function createTraceoMount(options: TraceoServerOptions) {
+  const basePath = normalizeBasePath(options.basePath) || '/traceo';
+  const mountOptions: TraceoServerOptions = { ...options, basePath };
+
+  return async (req: IncomingMessage & { url?: string; originalUrl?: string }, res: ServerResponse, next?: (error?: unknown) => void) => {
+    if (!req.url) {
+      sendJson(res, 400, { error: 'Missing URL' });
+      return;
+    }
+
+    // When mounted via Express, req.url is already relative to the mount path.
+    const url = new URL(req.url, 'http://localhost');
+    if (url.pathname === '' || url.pathname === '/') {
+      // Prefer trailing slash so relative assets resolve under /traceo/
+      const original = req.originalUrl ?? `${basePath}${req.url}`;
+      if (!original.split('?')[0].endsWith('/')) {
+        res.writeHead(302, { Location: `${basePath}/${url.search}` });
+        res.end();
+        return;
+      }
+    }
+
+    const handled = await handleTraceoRequest(req, res, mountOptions, url.pathname || '/', url.search);
+    if (!handled) {
+      if (typeof next === 'function') {
+        next();
+        return;
+      }
+      sendJson(res, 404, { error: 'Not found' });
+    }
+  };
+}
+
+export function createTraceoServer(options: TraceoServerOptions): Server {
+  const basePath = normalizeBasePath(options.basePath);
 
   return createServer(async (req: IncomingMessage, res: ServerResponse) => {
     if (!req.url) {
@@ -294,86 +458,23 @@ export function createTraceoServer(options: TraceoServerOptions): Server {
     }
 
     const url = new URL(req.url, 'http://localhost');
-
-    try {
-      if (req.method === 'GET' && url.pathname === '/health') {
-        sendJson(res, 200, { status: 'ok' });
+    let pathname = url.pathname;
+    if (basePath) {
+      if (pathname === basePath) {
+        res.writeHead(302, { Location: `${basePath}/${url.search}` });
+        res.end();
         return;
       }
-
-      if (!isAuthorized(req, options)) {
-        sendUnauthorized(res, options);
+      if (!pathname.startsWith(`${basePath}/`) && pathname !== basePath) {
+        sendJson(res, 404, { error: 'Not found' });
         return;
       }
-
-      if (req.method === 'GET' && url.pathname === '/events') {
-        const events = await storage.query(parseQuery(url));
-        sendJson(res, 200, { events, count: events.length });
-        return;
-      }
-
-      if (req.method === 'GET' && url.pathname === '/errors') {
-        const events = await storage.query({ ...parseQuery(url), type: 'error' });
-        sendJson(res, 200, { events, count: events.length });
-        return;
-      }
-
-      if (req.method === 'GET' && url.pathname === '/requests') {
-        const query = parseQuery(url);
-        delete query.limit;
-        const events = await storage.query(query);
-        const all = summarizeRequests(events);
-        const statusFamily = url.searchParams.get('statusFamily')?.trim() ?? '';
-        const faults = url.searchParams.get('faults') === '1' || url.searchParams.get('faults') === 'true';
-        const filtered = filterRequestSummaries(all, {
-          statusFamily: /^[2-5]$/.test(statusFamily) ? statusFamily : undefined,
-          faults
-        });
-        const page = paginateRequestSummaries(
-          filtered,
-          url.searchParams.get('page'),
-          url.searchParams.get('pageSize')
-        );
-        sendJson(res, 200, {
-          ...page,
-          facets: requestFacets(all)
-        });
-        return;
-      }
-
-      if (req.method === 'DELETE' && url.pathname === '/requests') {
-        const removed = await storage.clear();
-        sendJson(res, 200, { removed });
-        return;
-      }
-
-      if (req.method === 'GET' && url.pathname.startsWith('/timeline/')) {
-        const requestId = url.pathname.split('/').pop() ?? '';
-        const timeline = await storage.getTimeline(requestId);
-        sendJson(res, 200, { requestId, timeline });
-        return;
-      }
-
-      if (req.method === 'GET' && dashboardEnabled) {
-        const filePath = safeDashboardFile(dashboardDir, url.pathname);
-        if (filePath && serveDashboard(res, filePath)) {
-          return;
-        }
-        if (url.pathname === '/' || url.pathname.startsWith('/dashboard')) {
-          sendJson(res, 404, { error: 'Dashboard not found' });
-          return;
-        }
-      }
-
-      if (req.method === 'GET' && (url.pathname === '/' || url.pathname.startsWith('/dashboard'))) {
-        sendJson(res, 404, { error: 'Dashboard disabled' });
-        return;
-      }
-    } catch {
-      sendStorageFailure(res);
-      return;
+      pathname = pathname.slice(basePath.length) || '/';
     }
 
-    sendJson(res, 404, { error: 'Not found' });
+    const handled = await handleTraceoRequest(req, res, { ...options, basePath }, pathname, url.search);
+    if (!handled) {
+      sendJson(res, 404, { error: 'Not found' });
+    }
   });
 }

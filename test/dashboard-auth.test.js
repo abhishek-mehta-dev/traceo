@@ -69,12 +69,24 @@ test('dashboard lists requests and serves the UI from injected storage', async (
     assert.match(ui.body, /aria-label="Hop pages"/);
     assert.match(ui.body, /id="page-input"/);
     assert.match(ui.body, /id="clear-all"/);
+    assert.match(ui.body, /styles\.css/);
+    assert.match(ui.body, /app\.js/);
     assert.match(ui.body, /json-preview\.js/);
 
     const preview = await get(port, '/json-preview.js');
     assert.equal(preview.statusCode, 200);
     assert.match(preview.headers['content-type'], /javascript/);
     assert.match(preview.body, /recoverTruncatedJson/);
+
+    const css = await get(port, '/styles.css');
+    assert.equal(css.statusCode, 200);
+    assert.match(css.headers['content-type'], /text\/css/);
+
+    const appJs = await get(port, '/app.js');
+    assert.equal(appJs.statusCode, 200);
+    assert.match(appJs.headers['content-type'], /javascript/);
+    assert.match(appJs.body, /loadRequests/);
+    assert.match(appJs.body, /TRACEO_BASE|__TRACEO_BASE__/);
 
     const icon = await get(port, '/favicon.svg');
     assert.equal(icon.statusCode, 200);

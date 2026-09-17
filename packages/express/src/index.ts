@@ -6,6 +6,13 @@ import {
   type TraceCapturePolicy,
   type TraceoEventSink
 } from '@traceo/core';
+import {
+  createTraceoMount,
+  normalizeBasePath,
+  type TraceoBasicAuth,
+  type TraceoServerOptions
+} from '@traceo/server';
+import { createTraceoStoreFromEnv, type TraceoStorage } from '@traceo/storage';
 
 export interface TraceoExpressOptions {
   sink: TraceoEventSink;
@@ -16,6 +23,8 @@ export interface TraceoExpressOptions {
   captureResponseBody?: boolean;
   maxBodyBytes?: number;
   maskKeys?: string[];
+  /** Skip capture for URLs under this prefix (dashboard traffic). */
+  skipPathPrefix?: string;
 }
 
 export interface TraceoRequestLike {
@@ -40,6 +49,34 @@ export interface TraceoResponseLike {
 }
 
 export type TraceoNextFunction = (error?: unknown) => void;
+
+export interface TraceoAttachOptions {
+  enabled?: boolean;
+  path?: string;
+  storage?: TraceoStorage;
+  dashboard?: boolean;
+  dashboardDir?: string;
+  basicAuth?: TraceoBasicAuth;
+  apiKey?: string;
+  captureHeaders?: boolean;
+  captureCookies?: boolean;
+  captureQuery?: boolean;
+  captureRequestBody?: boolean;
+  captureResponseBody?: boolean;
+  maxBodyBytes?: number;
+  maskKeys?: string[];
+}
+
+export interface TraceoAttachment {
+  enabled: boolean;
+  path: string;
+  storage: TraceoStorage | null;
+  errorHandler: (error: unknown, req: TraceoRequestLike, res: TraceoResponseLike, next: TraceoNextFunction) => void;
+}
+
+interface ExpressLike {
+  use: (...args: unknown[]) => unknown;
+}
 
 interface CollectedRequest {
   method: string;
@@ -89,6 +126,14 @@ function getRequestMetadata(req: TraceoRequestLike, options: TraceoExpressOption
   };
 }
 
+function shouldSkipCapture(req: TraceoRequestLike, skipPathPrefix?: string): boolean {
+  if (!skipPathPrefix) {
+    return false;
+  }
+  const path = req.originalUrl ?? req.url ?? '';
+  return path === skipPathPrefix || path.startsWith(`${skipPathPrefix}/`) || path.startsWith(`${skipPathPrefix}?`);
+}
+
 function captureRequestError(options: TraceoExpressOptions, req: TraceoRequestLike, error: unknown, statusCode?: number): void {
   const details = errorFromUnknown(error);
   void options.sink.capture(createErrorEvent({
@@ -105,6 +150,11 @@ export function createTraceoMiddleware(options: TraceoExpressOptions) {
   const policy = capturePolicy(options);
 
   return (req: TraceoRequestLike, res: TraceoResponseLike, next: TraceoNextFunction) => {
+    if (shouldSkipCapture(req, options.skipPathPrefix)) {
+      next();
+      return;
+    }
+
     const startedAt = Date.now();
     const startedEvent = createRequestStartedEvent({
       ...getRequestMetadata(req, options),
@@ -157,7 +207,100 @@ export function createTraceoMiddleware(options: TraceoExpressOptions) {
 
 export function createTraceoErrorHandler(options: TraceoExpressOptions) {
   return (error: unknown, req: TraceoRequestLike, res: TraceoResponseLike, next: TraceoNextFunction) => {
-    captureRequestError(options, req, error, res.statusCode && res.statusCode >= 400 ? res.statusCode : undefined);
+    if (!shouldSkipCapture(req, options.skipPathPrefix)) {
+      captureRequestError(options, req, error, res.statusCode && res.statusCode >= 400 ? res.statusCode : undefined);
+    }
     next(error);
+  };
+}
+
+export function isTraceoEnabled(flag = process.env.TRACEO_ENABLED): boolean {
+  const value = flag?.trim().toLowerCase();
+  return value === '1' || value === 'true';
+}
+
+function resolveBasicAuthFromEnv(): TraceoBasicAuth | undefined {
+  const value = process.env.TRACEO_BASIC_AUTH;
+  if (!value) {
+    return undefined;
+  }
+  const separator = value.indexOf(':');
+  if (separator === -1) {
+    return undefined;
+  }
+  return {
+    username: value.slice(0, separator),
+    password: value.slice(separator + 1)
+  };
+}
+
+function resolveAttachPath(path?: string): string {
+  return normalizeBasePath(path ?? process.env.TRACEO_PATH ?? '/traceo') || '/traceo';
+}
+
+/**
+ * Wire Traceo into an Express app with minimal boilerplate.
+ *
+ * When `TRACEO_ENABLED=1|true` (or `options.enabled`):
+ * - captures requests/responses
+ * - serves the dashboard + API under `/traceo` (or `TRACEO_PATH`) on the same server
+ *
+ * Place after body parsers. Mount `attachment.errorHandler` before your final error handler.
+ *
+ * @example
+ * ```js
+ * app.use(express.json());
+ * const traceo = attachTraceo(app);
+ * // ... routes ...
+ * app.use(traceo.errorHandler);
+ * app.use(yourErrorHandler);
+ * ```
+ */
+export function attachTraceo(app: ExpressLike, options: TraceoAttachOptions = {}): TraceoAttachment {
+  const enabled = options.enabled ?? isTraceoEnabled();
+  const path = resolveAttachPath(options.path);
+  const noopErrorHandler = (error: unknown, _req: TraceoRequestLike, _res: TraceoResponseLike, next: TraceoNextFunction) => {
+    next(error);
+  };
+
+  if (!enabled) {
+    return {
+      enabled: false,
+      path,
+      storage: null,
+      errorHandler: noopErrorHandler
+    };
+  }
+
+  const storage = options.storage ?? createTraceoStoreFromEnv();
+  const captureOptions: TraceoExpressOptions = {
+    sink: storage,
+    captureHeaders: options.captureHeaders ?? true,
+    captureCookies: options.captureCookies ?? true,
+    captureQuery: options.captureQuery,
+    captureRequestBody: options.captureRequestBody ?? true,
+    captureResponseBody: options.captureResponseBody ?? true,
+    maxBodyBytes: options.maxBodyBytes,
+    maskKeys: options.maskKeys,
+    skipPathPrefix: path
+  };
+
+  app.use(createTraceoMiddleware(captureOptions));
+
+  const mountOptions: TraceoServerOptions = {
+    storage,
+    dashboard: options.dashboard ?? true,
+    dashboardDir: options.dashboardDir,
+    basicAuth: options.basicAuth ?? resolveBasicAuthFromEnv(),
+    apiKey: options.apiKey ?? process.env.TRACEO_API_KEY ?? undefined,
+    basePath: path
+  };
+  app.use(path, createTraceoMount(mountOptions));
+
+  return {
+    enabled: true,
+    path,
+    storage,
+    errorHandler: createTraceoErrorHandler(captureOptions)
   };
 }
