@@ -81,7 +81,7 @@ test('attachTraceo serves the dashboard under /traceo on the same Express app', 
     path: '/traceo',
     storage: store,
     dashboard: true,
-    dashboardDir: path.resolve(__dirname, '../apps/dashboard/public')
+    dashboardDir: path.resolve(__dirname, '../packages/server/public')
   });
   assert.equal(attachment.enabled, true);
   assert.equal(attachment.path, '/traceo');

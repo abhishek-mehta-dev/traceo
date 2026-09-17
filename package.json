@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node packages/server/scripts/copy-dashboard.js",
     "test": "node --test test/*.test.js packages/express/src/*.test.js packages/nestjs/src/*.test.js",
     "start": "pnpm --filter @traceo/example-express-basic start",
     "example": "pnpm --filter @traceo/example-express-basic start"

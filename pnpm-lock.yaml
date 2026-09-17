@@ -21,13 +21,13 @@ importers:
   examples/express-basic:
     dependencies:
       '@traceo/express':
-        specifier: workspace:*
+        specifier: file:../../packages/express
         version: link:../../packages/express
       '@traceo/server':
-        specifier: workspace:*
+        specifier: file:../../packages/server
         version: link:../../packages/server
       '@traceo/storage':
-        specifier: workspace:*
+        specifier: file:../../packages/storage
         version: link:../../packages/storage
       express:
         specifier: ^5.1.0
@@ -36,7 +36,7 @@ importers:
   packages/cli:
     dependencies:
       '@traceo/storage':
-        specifier: workspace:*
+        specifier: file:../storage
         version: link:../storage
     devDependencies:
       '@types/node':
@@ -48,16 +48,16 @@ importers:
   packages/express:
     dependencies:
       '@traceo/core':
-        specifier: workspace:*
+        specifier: file:../core
         version: link:../core
       '@traceo/server':
-        specifier: workspace:*
+        specifier: file:../server
         version: link:../server
       '@traceo/shared':
-        specifier: workspace:*
+        specifier: file:../shared
         version: link:../shared
       '@traceo/storage':
-        specifier: workspace:*
+        specifier: file:../storage
         version: link:../storage
     devDependencies:
       '@types/node':
@@ -67,16 +67,16 @@ importers:
   packages/nestjs:
     dependencies:
       '@traceo/core':
-        specifier: workspace:*
+        specifier: file:../core
         version: link:../core
       '@traceo/express':
-        specifier: workspace:*
+        specifier: file:../express
         version: link:../express
 
   packages/server:
     dependencies:
       '@traceo/storage':
-        specifier: workspace:*
+        specifier: file:../storage
         version: link:../storage
     devDependencies:
       '@types/node':

@@ -18,7 +18,6 @@ async function main() {
     enabled: true,
     storage: store,
     path: process.env.TRACEO_PATH || '/traceo',
-    dashboardDir: join(__dirname, '../../apps/dashboard/public'),
     captureHeaders: true,
     captureRequestBody: true,
     captureResponseBody: true

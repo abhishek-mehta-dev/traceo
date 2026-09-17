@@ -8,10 +8,10 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@traceo/core": "workspace:*",
-    "@traceo/server": "workspace:*",
-    "@traceo/shared": "workspace:*",
-    "@traceo/storage": "workspace:*"
+    "@traceo/core": "file:../core",
+    "@traceo/server": "file:../server",
+    "@traceo/shared": "file:../shared",
+    "@traceo/storage": "file:../storage"
   },
   "devDependencies": {
     "@types/node": "^24.13.3"

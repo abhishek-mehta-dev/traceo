@@ -21,17 +21,18 @@ pnpm start
 
 Then open the dashboard at [http://127.0.0.1:3000/traceo/](http://127.0.0.1:3000/traceo/) and hit [http://127.0.0.1:3000/orders](http://127.0.0.1:3000/orders).
 
-## Use in any Express app
+## Use in any Express app (local and production)
+
+Same app code everywhere. Nginx only decides the public URL.
 
 ```js
-const express = require('express');
-const { attachTraceo } = require('@traceo/express');
+import express from 'express';
+import { attachTraceo } from '@traceo/express';
 
 const app = express();
 app.use(express.json());
 
-// TRACEO_ENABLED=true → capture + dashboard at /traceo on this same server
-const traceo = attachTraceo(app);
+const traceo = attachTraceo(app); // on when TRACEO_ENABLED=true
 
 // ... your routes ...
 
@@ -43,18 +44,40 @@ app.use((err, _req, res, _next) => {
 app.listen(8000);
 ```
 
-Env:
+`.env` (local and production):
 
 ```bash
 TRACEO_ENABLED=true
-# optional:
 TRACEO_PATH=/traceo
 TRACEO_SQLITE_FILE=./traceo.sqlite
-TRACEO_BASIC_AUTH=user:password
-TRACEO_API_KEY=your-key
+TRACEO_BASIC_AUTH=user:password   # recommended in production
 ```
 
-Open `http://localhost:8000/traceo/`. Behind nginx, proxy `/traceo/` to the same app.
+- Local: `http://localhost:8000/traceo/`
+- Production nginx:
+
+```nginx
+location /traceo/ {
+  proxy_pass http://127.0.0.1:8000/traceo/;
+  auth_basic "Traceo";
+  auth_basic_user_file /etc/nginx/.htpasswd;
+}
+```
+
+Then: `https://xyz.com/traceo/`
+
+Until packages are on npm, install from the Traceo repo:
+
+```bash
+npm install \
+  file:../Learning/traceo/packages/express \
+  file:../Learning/traceo/packages/server \
+  file:../Learning/traceo/packages/storage \
+  file:../Learning/traceo/packages/core \
+  file:../Learning/traceo/packages/shared
+```
+
+Run `pnpm build` in the Traceo repo first so `dist/` and dashboard assets exist.
 
 ## Packages
 

@@ -53,7 +53,7 @@ test('dashboard lists requests and serves the UI from injected storage', async (
   const server = createTraceoServer({
     storage: store,
     dashboard: true,
-    dashboardDir: path.resolve(__dirname, '../apps/dashboard/public')
+    dashboardDir: path.resolve(__dirname, '../packages/server/public')
   });
   const port = await listen(server);
 

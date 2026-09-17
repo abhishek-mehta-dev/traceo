@@ -85,7 +85,9 @@ export function isDashboardEnabled(options: Pick<TraceoServerOptions, 'dashboard
 }
 
 export function resolveDashboardDir(dashboardDir?: string): string {
-  return dashboardDir ?? process.env.TRACEO_DASHBOARD_DIR ?? join(__dirname, '../../../apps/dashboard/public');
+  return dashboardDir
+    ?? process.env.TRACEO_DASHBOARD_DIR
+    ?? join(__dirname, '../public');
 }
 
 function timingSafeEqual(left: string, right: string): boolean {

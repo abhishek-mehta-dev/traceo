@@ -6,7 +6,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@traceo/storage": "workspace:*"
+    "@traceo/storage": "file:../storage"
   },
   "devDependencies": {
     "@types/node": "^24.2.0"

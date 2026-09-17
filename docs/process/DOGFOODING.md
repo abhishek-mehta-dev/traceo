@@ -17,7 +17,7 @@ Phase 11 validated the current Express vertical slice against an existing produc
 - [x] SQLite storage working (`amity-ai-assistant-backend/traceo.sqlite`)
 - [x] Dashboard accessible
 
-Integration is env-gated (`TRACEO_ENABLED=true`) via `attachTraceo(app)`. Capture middleware and the dashboard both run on the same Express port under `/traceo` (override with `TRACEO_PATH`). No separate dashboard process or `TRACEO_DASHBOARD_PORT` is required. Until packages are published to npm, `TRACEO_ROOT` can still point at the local Traceo monorepo.
+Integration uses the same production shape locally: `attachTraceo(app)` from `@traceo/express` (installed as a normal dependency). With `TRACEO_ENABLED=true`, capture and the dashboard run on the Amity Express port under `/traceo`. No separate dashboard process and no `TRACEO_ROOT` loader. Nginx only exposes that path publicly in production.
 
 ## Request Tests
 

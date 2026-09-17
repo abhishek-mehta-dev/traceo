@@ -8,7 +8,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@traceo/core": "workspace:*",
-    "@traceo/express": "workspace:*"
+    "@traceo/core": "file:../core",
+    "@traceo/express": "file:../express"
   }
 }
